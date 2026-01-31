@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, Mic, Palette, Trash2, Brush } from 'lucide-react';
+import { Sparkles, Mic, Palette, Trash2, Brush, Music2, Loader2 } from 'lucide-react';
 
 interface SeparatorProps {
   type: 'piano' | 'notes' | 'paint';
@@ -33,9 +33,8 @@ const getAudioContext = () => {
   return new AudioContextClass();
 };
 
-// Create an Impulse Response for Reverb (Simulates a large hall)
 const createReverbBuffer = (ctx: AudioContext) => {
-  const duration = 2.0;
+  const duration = 2.5;
   const decay = 2.0;
   const sampleRate = ctx.sampleRate;
   const length = sampleRate * duration;
@@ -45,7 +44,6 @@ const createReverbBuffer = (ctx: AudioContext) => {
 
   for (let i = 0; i < length; i++) {
     const n = i / length;
-    // Exponential decay noise
     left[i] = (Math.random() * 2 - 1) * Math.pow(1 - n, decay);
     right[i] = (Math.random() * 2 - 1) * Math.pow(1 - n, decay);
   }
@@ -57,111 +55,106 @@ const SectionSeparator: React.FC<SeparatorProps> = ({ type }) => {
   const [pressedKey, setPressedKey] = useState<string | null>(null);
   const [showHint, setShowHint] = useState(true);
   
+  // Audio Refs
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const sampleBufferRef = useRef<AudioBuffer | null>(null);
   const reverbNodeRef = useRef<ConvolverNode | null>(null);
-  const masterCompressorRef = useRef<DynamicsCompressorNode | null>(null);
+  const [isSampleLoaded, setIsSampleLoaded] = useState(false);
   
-  // Refs for interactions
+  // Interaction Refs
   const isDragging = useRef(false);
   const lastKeyId = useRef<string | null>(null);
   const pianoContainerRef = useRef<HTMLDivElement>(null);
 
-  // --- PAINT STATE (CANVAS) ---
+  // Paint Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawing = useRef(false);
   const lastPos = useRef<{ x: number; y: number } | null>(null);
   const hueRef = useRef(0);
 
-  // --- CHOIR STATE ---
+  // Choir State
   const [activeSingers, setActiveSingers] = useState<number[]>([]);
   
+  // Definiția vocilor bazată pe Pitch Shifting (Base Note: C4)
   const voices = [
     { 
       id: 0, 
-      note: 130.81, // C3 (Bas)
       label: 'Bas', 
-      desc: 'Voce Groasă',
+      desc: 'Voce Gravă',
       color: 'bg-blue-600', 
       mouth: 'w-8 h-3 rounded-full',
-      waveType: 'sawtooth' as OscillatorType, // Richer harmonics for male voice
-      filterFreq: 600
+      playbackRate: 0.5, // Octavă mai jos (C3)
+      gain: 1.2
     },
     { 
       id: 1, 
-      note: 196.00, // G3 (Tenor)
       label: 'Tenor', 
       desc: 'Voce Medie',
       color: 'bg-green-500', 
       mouth: 'w-7 h-5 rounded-[1rem]',
-      waveType: 'sawtooth' as OscillatorType,
-      filterFreq: 900
+      playbackRate: 0.749, // Aprox G3
+      gain: 1.0
     },
     { 
       id: 2, 
-      note: 329.63, // E4 (Alto)
       label: 'Alto', 
       desc: 'Voce Caldă',
       color: 'bg-pink-500', 
       mouth: 'w-6 h-6 rounded-full',
-      waveType: 'triangle' as OscillatorType, // Softer for female low voice
-      filterFreq: 1500
+      playbackRate: 1.25, // Aprox E4
+      gain: 0.9
     },
     { 
       id: 3, 
-      note: 523.25, // C5 (Sopran)
       label: 'Sopran', 
       desc: 'Voce Înaltă',
       color: 'bg-yellow-400', 
       mouth: 'w-5 h-7 rounded-[2rem]',
-      waveType: 'sine' as OscillatorType, // Purest for high voice
-      filterFreq: 3000
+      playbackRate: 2.0, // Octavă mai sus (C5)
+      gain: 0.8
     }
   ];
 
-  // Store references to stop sounds later
-  const activeVoicesRef = useRef<Record<number, { oscs: OscillatorNode[], gain: GainNode } | null>>({});
+  const activeVoicesRef = useRef<Record<number, { source: AudioBufferSourceNode, gain: GainNode } | null>>({});
 
+  // Init Audio Context & Load Sample
   useEffect(() => {
+    const loadAudio = async () => {
+      try {
+        const ctx = getAudioContext();
+        audioCtxRef.current = ctx;
+
+        // Create Reverb
+        const reverb = ctx.createConvolver();
+        reverb.buffer = createReverbBuffer(ctx);
+        reverbNodeRef.current = reverb;
+        reverb.connect(ctx.destination);
+
+        // Load Choir Sample (C4 Note - High Quality)
+        // Using a reliable raw github source for a Choir Aah sound
+        const response = await fetch('https://raw.githubusercontent.com/gleitz/midi-js-soundfonts/gh-pages/MusyngKite/choir_aahs-mp3/C4.mp3');
+        const arrayBuffer = await response.arrayBuffer();
+        const decodedAudio = await ctx.decodeAudioData(arrayBuffer);
+        
+        sampleBufferRef.current = decodedAudio;
+        setIsSampleLoaded(true);
+      } catch (error) {
+        console.error("Failed to load vocal sample:", error);
+      }
+    };
+
+    // Only load audio if we are in the 'notes' section or 'piano'
+    if (type === 'notes' || type === 'piano') {
+      loadAudio();
+    }
+
     return () => {
       if (audioCtxRef.current) audioCtxRef.current.close();
     };
-  }, []);
+  }, [type]);
 
-  const initAudio = () => {
-    if (!audioCtxRef.current) {
-      const ctx = getAudioContext();
-      audioCtxRef.current = ctx;
-
-      // Setup Master Effects Chain: Voices -> Compressor -> Reverb -> Destination
-      
-      // 1. Compressor (Glue everything together)
-      const compressor = ctx.createDynamicsCompressor();
-      compressor.threshold.value = -20;
-      compressor.knee.value = 40;
-      compressor.ratio.value = 12;
-      compressor.attack.value = 0;
-      compressor.release.value = 0.25;
-      
-      // 2. Reverb (Hall simulation)
-      const reverb = ctx.createConvolver();
-      reverb.buffer = createReverbBuffer(ctx);
-      
-      // 3. Dry/Wet Mix
-      // We connect compressor to destination (Dry) AND to Reverb (Wet)
-      compressor.connect(ctx.destination);
-      
-      // Reverb gain (Wet level)
-      const reverbGain = ctx.createGain();
-      reverbGain.gain.value = 0.4; // 40% reverb mix
-      
-      compressor.connect(reverb);
-      reverb.connect(reverbGain);
-      reverbGain.connect(ctx.destination);
-
-      masterCompressorRef.current = compressor;
-      reverbNodeRef.current = reverb;
-    }
-    if (audioCtxRef.current.state === 'suspended') {
+  const initAudioCtx = () => {
+    if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
       audioCtxRef.current.resume();
     }
   };
@@ -169,32 +162,31 @@ const SectionSeparator: React.FC<SeparatorProps> = ({ type }) => {
   // --- PIANO LOGIC ---
   const playPianoNote = (label: string, octaveOffset: number) => {
     try {
-      initAudio();
+      initAudioCtx();
       const ctx = audioCtxRef.current!;
       const now = ctx.currentTime;
       const frequency = noteFrequencies[label] * Math.pow(2, octaveOffset);
       
-      // Simple Piano Synthesis
       const masterGain = ctx.createGain();
       const filter = ctx.createBiquadFilter();
       filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(frequency * 6, now);
-      filter.frequency.exponentialRampToValueAtTime(frequency * 1.5, now + 1.5);
+      filter.frequency.setValueAtTime(frequency * 4, now);
+      filter.frequency.exponentialRampToValueAtTime(frequency, now + 0.5);
       
       const osc = ctx.createOscillator();
-      osc.type = 'triangle'; // Triangle is good for piano-like basic sound
+      osc.type = 'triangle';
       osc.frequency.setValueAtTime(frequency, now);
       
       masterGain.gain.setValueAtTime(0, now);
-      masterGain.gain.linearRampToValueAtTime(0.2, now + 0.02); 
-      masterGain.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
+      masterGain.gain.linearRampToValueAtTime(0.3, now + 0.01); 
+      masterGain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
 
       osc.connect(masterGain);
       masterGain.connect(filter);
       filter.connect(ctx.destination);
       
       osc.start(now);
-      osc.stop(now + 2.1);
+      osc.stop(now + 1.6);
     } catch (e) {}
   };
 
@@ -211,78 +203,53 @@ const SectionSeparator: React.FC<SeparatorProps> = ({ type }) => {
     setTimeout(() => setActiveNotes((prev) => prev.filter((n) => n.id !== newNote.id)), 1200);
   };
 
-  // --- CHOIR LOGIC (ENSEMBLE SYNTHESIS) ---
+  // --- CHOIR LOGIC (SAMPLER ENGINE) ---
   const startSinging = (singerId: number) => {
     try {
-      initAudio();
-      const ctx = audioCtxRef.current!;
-      const masterDest = masterCompressorRef.current || ctx.destination;
-
+      if (!isSampleLoaded || !sampleBufferRef.current || !audioCtxRef.current) return;
+      initAudioCtx();
+      
       if (activeVoicesRef.current[singerId]) return;
 
       const voiceData = voices.find(v => v.id === singerId);
       if (!voiceData) return;
 
+      const ctx = audioCtxRef.current;
       const now = ctx.currentTime;
+
+      // Create Source
+      const source = ctx.createBufferSource();
+      source.buffer = sampleBufferRef.current;
+      source.playbackRate.value = voiceData.playbackRate;
+      source.loop = true; // Loop the sample for continuous singing
+
+      // Create Gain (Volume Envelope)
+      const gainNode = ctx.createGain();
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(voiceData.gain, now + 0.4); // Slow attack (human breath)
+
+      // Routing: Source -> Gain -> Reverb -> Destination
+      source.connect(gainNode);
       
-      // --- THE ENSEMBLE ENGINE ---
-      // We create 3 oscillators slightly detuned to simulate a group of singers (Chorus effect)
-      // This creates a "thick", natural sound instead of a robotic thin beep.
+      if (reverbNodeRef.current) {
+        // Wet Mix (through reverb)
+        const reverbGain = ctx.createGain();
+        reverbGain.gain.value = 0.5;
+        gainNode.connect(reverbGain);
+        reverbGain.connect(reverbNodeRef.current);
+        
+        // Dry Mix (direct)
+        const dryGain = ctx.createGain();
+        dryGain.gain.value = 0.6;
+        gainNode.connect(dryGain);
+        dryGain.connect(ctx.destination);
+      } else {
+        gainNode.connect(ctx.destination);
+      }
+
+      source.start(now);
       
-      const oscs: OscillatorNode[] = [];
-      const voiceGain = ctx.createGain();
-      
-      // Filter the sound to make it sound like a voice (remove harsh high frequencies)
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.value = voiceData.filterFreq;
-      filter.Q.value = 1;
-
-      // 1. Center Pitch
-      const osc1 = ctx.createOscillator();
-      osc1.type = voiceData.waveType;
-      osc1.frequency.value = voiceData.note;
-      
-      // 2. Slightly Flat (-8 cents)
-      const osc2 = ctx.createOscillator();
-      osc2.type = voiceData.waveType;
-      osc2.frequency.value = voiceData.note;
-      osc2.detune.value = -8; 
-
-      // 3. Slightly Sharp (+8 cents)
-      const osc3 = ctx.createOscillator();
-      osc3.type = voiceData.waveType;
-      osc3.frequency.value = voiceData.note;
-      osc3.detune.value = 8;
-
-      oscs.push(osc1, osc2, osc3);
-
-      // Connect everything
-      oscs.forEach(osc => {
-        osc.connect(filter);
-        osc.start(now);
-      });
-
-      filter.connect(voiceGain);
-      voiceGain.connect(masterDest);
-
-      // Envelope (Attack) - Soft Fade In
-      voiceGain.gain.setValueAtTime(0, now);
-      voiceGain.gain.linearRampToValueAtTime(0.15, now + 0.3); // Slower attack = more human
-
-      // Add Vibrato (LFO)
-      const lfo = ctx.createOscillator();
-      lfo.frequency.value = 4.5; // Hz (Vibrato speed)
-      const lfoGain = ctx.createGain();
-      lfoGain.gain.value = 4; // Vibrato depth
-      lfo.connect(lfoGain);
-      
-      // Connect vibrato to all oscillators
-      oscs.forEach(osc => lfoGain.connect(osc.frequency));
-      lfo.start(now);
-      oscs.push(lfo); // Add LFO to array to stop it later
-
-      activeVoicesRef.current[singerId] = { oscs, gain: voiceGain };
+      activeVoicesRef.current[singerId] = { source, gain: gainNode };
       setActiveSingers(prev => [...prev, singerId]);
     } catch (e) { console.error(e); }
   };
@@ -291,30 +258,25 @@ const SectionSeparator: React.FC<SeparatorProps> = ({ type }) => {
     const voiceNode = activeVoicesRef.current[singerId];
     const ctx = audioCtxRef.current;
     if (voiceNode && ctx) {
-      const { oscs, gain } = voiceNode;
+      const { source, gain } = voiceNode;
       const now = ctx.currentTime;
       
-      // Release (Fade Out)
+      // Release Envelope (Natural fade out)
       gain.gain.cancelScheduledValues(now);
       gain.gain.setValueAtTime(gain.gain.value, now);
-      gain.gain.linearRampToValueAtTime(0, now + 0.4); // Natural release
+      gain.gain.linearRampToValueAtTime(0, now + 0.3);
 
-      // Stop oscillators after release
-      oscs.forEach(osc => {
-        try { osc.stop(now + 0.5); } catch(e){}
-      });
+      source.stop(now + 0.35);
     }
     activeVoicesRef.current[singerId] = null;
     setActiveSingers(prev => prev.filter(id => id !== singerId));
   };
 
-  // --- PAINT LOGIC (CANVAS BRUSH) ---
-  
+  // --- PAINT LOGIC ---
   useEffect(() => {
     if (type !== 'paint') return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
     const setSize = () => {
       const rect = canvas.parentElement?.getBoundingClientRect();
       if (rect) {
@@ -331,60 +293,42 @@ const SectionSeparator: React.FC<SeparatorProps> = ({ type }) => {
     if ((e.target as HTMLElement).closest('button')) return;
     isDrawing.current = true;
     setShowHint(false);
-    
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
     const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-    
-    lastPos.current = {
-      x: clientX - rect.left,
-      y: clientY - rect.top
-    };
-    
+    lastPos.current = { x: clientX - rect.left, y: clientY - rect.top };
     draw(e); 
   };
 
   const draw = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDrawing.current || !lastPos.current || !canvasRef.current) return;
     if ((e.target as HTMLElement).closest('button')) return;
-
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
     const rect = canvas.getBoundingClientRect();
     const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-    
     const currentX = clientX - rect.left;
     const currentY = clientY - rect.top;
-
     hueRef.current = (hueRef.current + 2) % 360;
     
     ctx.beginPath();
     ctx.moveTo(lastPos.current.x, lastPos.current.y);
     ctx.lineTo(currentX, currentY);
-    
     ctx.strokeStyle = `hsl(${hueRef.current}, 75%, 60%)`;
     ctx.lineWidth = 20; 
     ctx.lineCap = 'round'; 
     ctx.lineJoin = 'round';
-    
     ctx.shadowBlur = 2;
     ctx.shadowColor = 'rgba(0,0,0,0.1)';
-    
     ctx.stroke();
-
     lastPos.current = { x: currentX, y: currentY };
   };
 
-  const stopDrawing = () => {
-    isDrawing.current = false;
-    lastPos.current = null;
-  };
-
+  const stopDrawing = () => { isDrawing.current = false; lastPos.current = null; };
   const clearCanvas = () => {
     const canvas = canvasRef.current;
     if (canvas) {
@@ -393,96 +337,85 @@ const SectionSeparator: React.FC<SeparatorProps> = ({ type }) => {
       setShowHint(true);
     }
   };
-
-  // --- EVENT HANDLERS ---
-  const handleStart = (fn: () => void) => {
-    isDragging.current = true;
-    fn();
-  };
-  
-  const handleEnd = () => {
-    isDragging.current = false;
-    lastKeyId.current = null;
-    setPressedKey(null);
-  };
+  const handleStart = (fn: () => void) => { isDragging.current = true; fn(); };
+  const handleEnd = () => { isDragging.current = false; lastKeyId.current = null; setPressedKey(null); };
 
   // --- RENDERERS ---
 
-  if (type === 'notes') { // CANTO - THE CHOIR
+  if (type === 'notes') { 
     return (
       <div className="relative w-full py-16 flex flex-col items-center justify-center my-8 select-none">
         {showHint && (
           <div className="absolute top-0 animate-bounce flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-lg border border-purple-100 z-20">
-            <Sparkles size={14} className="text-yellow-500" />
-            <span className="text-xs font-bold text-purple-600">Ascultă diferența! 🎵</span>
+            <Music2 size={14} className="text-purple-500" />
+            <span className="text-xs font-bold text-purple-600">Ascultă vocile reale! 🎵</span>
           </div>
         )}
         
-        <div className="flex flex-wrap justify-center gap-6 sm:gap-10 items-end min-h-[220px]">
-          {voices.map((voice) => {
-            const isSinging = activeSingers.includes(voice.id);
-            return (
-              <div 
-                key={voice.id}
-                onMouseEnter={() => startSinging(voice.id)}
-                onMouseLeave={() => stopSinging(voice.id)}
-                onTouchStart={(e) => { e.preventDefault(); startSinging(voice.id); }}
-                onTouchEnd={(e) => { e.preventDefault(); stopSinging(voice.id); }}
-                className={`relative group flex flex-col items-center justify-end transition-all duration-300 ${isSinging ? '-translate-y-4 scale-110' : 'hover:-translate-y-2'}`}
-              >
-                 {/* Voice Bubble */}
-                 <div className={`
-                    w-20 h-20 sm:w-24 sm:h-24 rounded-full shadow-xl flex items-center justify-center 
-                    transition-all duration-200 border-4 border-white cursor-pointer
-                    ${voice.color} ${isSinging ? 'ring-4 ring-offset-2 ring-purple-300 brightness-110' : 'hover:brightness-105'}
-                 `}>
-                    <div className="flex flex-col items-center gap-2">
-                      {/* Eyes */}
-                      <div className="flex gap-3">
-                        <div className={`bg-white rounded-full transition-all ${isSinging ? 'w-2 h-2' : 'w-2 h-1'}`}></div>
-                        <div className={`bg-white rounded-full transition-all ${isSinging ? 'w-2 h-2' : 'w-2 h-1'}`}></div>
-                      </div>
-                      {/* Mouth */}
-                      <div className={`bg-gray-900 transition-all duration-200 ${isSinging ? `${voice.mouth} border-2 border-white scale-125` : 'w-4 h-1 rounded-full'}`}></div>
+        {!isSampleLoaded ? (
+            <div className="flex flex-col items-center gap-2 animate-pulse text-purple-400">
+                <Loader2 className="animate-spin" />
+                <span className="text-xs font-bold uppercase tracking-widest">Se încarcă vocile...</span>
+            </div>
+        ) : (
+            <div className="flex flex-wrap justify-center gap-6 sm:gap-10 items-end min-h-[220px]">
+            {voices.map((voice) => {
+                const isSinging = activeSingers.includes(voice.id);
+                return (
+                <div 
+                    key={voice.id}
+                    onMouseEnter={() => startSinging(voice.id)}
+                    onMouseLeave={() => stopSinging(voice.id)}
+                    onTouchStart={(e) => { e.preventDefault(); startSinging(voice.id); }}
+                    onTouchEnd={(e) => { e.preventDefault(); stopSinging(voice.id); }}
+                    className={`relative group flex flex-col items-center justify-end transition-all duration-300 ${isSinging ? '-translate-y-4 scale-110' : 'hover:-translate-y-2'}`}
+                >
+                    <div className={`
+                        w-20 h-20 sm:w-24 sm:h-24 rounded-full shadow-xl flex items-center justify-center 
+                        transition-all duration-200 border-4 border-white cursor-pointer
+                        ${voice.color} ${isSinging ? 'ring-4 ring-offset-2 ring-purple-300 brightness-110' : 'hover:brightness-105'}
+                    `}>
+                        <div className="flex flex-col items-center gap-2">
+                        <div className="flex gap-3">
+                            <div className={`bg-white rounded-full transition-all ${isSinging ? 'w-2 h-2' : 'w-2 h-1'}`}></div>
+                            <div className={`bg-white rounded-full transition-all ${isSinging ? 'w-2 h-2' : 'w-2 h-1'}`}></div>
+                        </div>
+                        <div className={`bg-gray-900 transition-all duration-200 ${isSinging ? `${voice.mouth} border-2 border-white scale-125` : 'w-4 h-1 rounded-full'}`}></div>
+                        </div>
                     </div>
-                 </div>
-                 
-                 {/* Body Stand */}
-                 <div className="w-1.5 h-10 bg-gray-200 mt-[-2px] -z-10 group-hover:bg-gray-300 transition-colors"></div>
-                 <div className="w-12 h-1.5 bg-gray-200 rounded-full group-hover:bg-gray-300 transition-colors"></div>
+                    
+                    <div className="w-1.5 h-10 bg-gray-200 mt-[-2px] -z-10 group-hover:bg-gray-300 transition-colors"></div>
+                    <div className="w-12 h-1.5 bg-gray-200 rounded-full group-hover:bg-gray-300 transition-colors"></div>
 
-                 {/* Feedback Particles */}
-                 {isSinging && (
-                   <div className="absolute -top-12 animate-float opacity-80 flex flex-col items-center">
-                     <Mic size={28} className={voice.color.replace('bg-', 'text-')} />
-                   </div>
-                 )}
-                 
-                 {/* Labels */}
-                 <div className="mt-3 text-center">
-                    <span className={`block text-sm font-black uppercase tracking-wider ${isSinging ? 'text-purple-600' : 'text-gray-800'}`}>
-                      {voice.label}
-                    </span>
-                    <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                      {voice.desc}
-                    </span>
-                 </div>
-              </div>
-            );
-          })}
-        </div>
+                    {isSinging && (
+                    <div className="absolute -top-12 animate-float opacity-80 flex flex-col items-center">
+                        <Mic size={28} className={voice.color.replace('bg-', 'text-')} />
+                    </div>
+                    )}
+                    
+                    <div className="mt-3 text-center">
+                        <span className={`block text-sm font-black uppercase tracking-wider ${isSinging ? 'text-purple-600' : 'text-gray-800'}`}>
+                        {voice.label}
+                        </span>
+                        <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                        {voice.desc}
+                        </span>
+                    </div>
+                </div>
+                );
+            })}
+            </div>
+        )}
       </div>
     );
   }
 
-  if (type === 'paint') { // PAINTING - CANVAS MODE
+  if (type === 'paint') { 
     return (
       <div className="relative w-full h-48 sm:h-72 my-8 bg-gray-50/50 flex items-center justify-center overflow-hidden">
-        {/* Background Texture */}
         <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#ccc 1px, transparent 1px)', backgroundSize: '10px 10px' }}></div>
         <div className="absolute inset-0 border-y-2 border-dashed border-gray-200 pointer-events-none"></div>
 
-        {/* Clear Button */}
         <button 
           onClick={clearCanvas}
           className="absolute top-4 right-4 z-20 bg-white p-2.5 rounded-xl shadow-lg border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-100 transition-all active:scale-95 flex items-center gap-2 group"
