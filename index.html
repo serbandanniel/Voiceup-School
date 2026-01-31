@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ro" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VoiceUp School - Canto, Pian, Pictură</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --color-piano-white: #ffffff;
+        --color-piano-black: #1a1a1a;
+        --bg-main: #fff9fe;
+        --text-main: #111827;
+        --text-muted: #4b5563;
+        --card-bg: #ffffff;
+        --glow-color: rgba(139, 92, 246, 0);
+      }
+      
+      .magic-mode {
+        --bg-main: #060111;
+        --text-main: #f9fafb;
+        --text-muted: #9ca3af;
+        --card-bg: #0f0720;
+        --glow-color: rgba(167, 139, 250, 0.6);
+      }
+
+      body {
+        font-family: 'Quicksand', sans-serif;
+        overflow-x: hidden;
+        background-color: var(--bg-main);
+        color: var(--text-main);
+        transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1), color 0.5s ease;
+      }
+
+      /* Gummy Rebound Animation */
+      @keyframes rebound-pop {
+        0% { transform: translateY(100px) scale(0.3); opacity: 0; }
+        50% { transform: translateY(-30px) scale(1.15); opacity: 1; }
+        70% { transform: translateY(10px) scale(0.9); }
+        85% { transform: translateY(-5px) scale(1.05); }
+        100% { transform: translateY(0) scale(1); opacity: 1; }
+      }
+      .animate-rebound { animation: rebound-pop 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+
+      /* Rubber Band Effect on Hover */
+      @keyframes rubber-band {
+        0% { transform: scale(1); }
+        30% { transform: scaleX(1.25) scaleY(0.75); }
+        40% { transform: scaleX(0.75) scaleY(1.25); }
+        50% { transform: scaleX(1.15) scaleY(0.85); }
+        65% { transform: scaleX(0.95) scaleY(1.05); }
+        75% { transform: scaleX(1.05) scaleY(0.95); }
+        100% { transform: scale(1); }
+      }
+      .hover-rubber:active, .hover-rubber:hover { animation: rubber-band 0.8s ease; }
+
+      /* Blink Blur Animation - Missing in previous version */
+      @keyframes blink-blur {
+        0%, 100% { opacity: 0; filter: blur(8px); transform: scale(0.8); }
+        50% { opacity: 1; filter: blur(0px); transform: scale(1.1); }
+      }
+      .animate-blink-blur { animation: blink-blur 4s infinite ease-in-out; }
+
+      /* Wiggle Animation for Pro Plan */
+      @keyframes wiggle-attention {
+        0%, 100% { transform: rotate(0deg) scale(1); }
+        25% { transform: rotate(-3deg) scale(1.05); }
+        50% { transform: rotate(3deg) scale(1.05); }
+        75% { transform: rotate(-3deg) scale(1.05); }
+      }
+      .animate-wiggle-slow { animation: wiggle-attention 3s ease-in-out infinite; }
+      /* Pause animation on hover or when selected to not annoy user */
+      .animate-wiggle-slow:hover, .animate-wiggle-slow.selected { animation: none; }
+
+      /* Note Pop Animation */
+      @keyframes note-pop {
+        0% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+        100% { opacity: 0; transform: translateY(-80px) scale(1.5) rotate(20deg); }
+      }
+      .animate-note-pop { animation: note-pop 1.2s ease-out forwards; }
+
+      /* Piano Keys Styling */
+      .piano-key-white {
+        background: linear-gradient(to bottom, #ffffff 0%, #f3f4f6 100%);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1), inset 0 -2px 4px rgba(0,0,0,0.05);
+        border-bottom-left-radius: 6px;
+        border-bottom-right-radius: 6px;
+        z-index: 1;
+      }
+      .piano-key-white:active {
+        background: #e5e7eb;
+        transform: scale(0.98);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      }
+
+      .piano-key-black {
+        background: linear-gradient(to bottom, #374151 0%, #111827 100%);
+        box-shadow: 2px 4px 8px rgba(0,0,0,0.3), inset 0 -2px 4px rgba(255,255,255,0.1);
+        border-bottom-left-radius: 4px;
+        border-bottom-right-radius: 4px;
+        z-index: 10;
+      }
+      .piano-key-black:active {
+        background: #000;
+        transform: translateX(-50%) scale(0.95) !important;
+      }
+
+      /* Magic Mode Styles */
+      .magic-mode .text-glow {
+        text-shadow: 0 0 15px var(--glow-color), 0 0 30px rgba(236, 72, 153, 0.3);
+      }
+      .magic-mode .price-glow {
+        color: #ffffff !important;
+        text-shadow: 0 0 10px rgba(139, 92, 246, 0.8), 0 0 20px rgba(139, 92, 246, 0.4);
+      }
+      .magic-mode p, .magic-mode .text-gray-500, .magic-mode .text-gray-600, .magic-mode .text-gray-700 {
+        color: #d1d5db !important;
+      }
+      .magic-mode .bg-white, .magic-mode .bg-purple-50, .magic-mode .bg-gray-50, .magic-mode .bg-gray-100 {
+        background-color: #0f0720 !important;
+      }
+      .magic-mode .text-gray-800, .magic-mode .text-gray-900 {
+        color: #ffffff !important;
+      }
+      .magic-mode .bg-mesh {
+        background-color: #060111;
+        background-image: radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.25) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.2) 0px, transparent 50%);
+      }
+
+      h1, h2, h3, h4 { font-family: 'Fredoka', sans-serif; }
+      /* Reverted Fluid Sizes to initial balanced state */
+      .text-fluid-h1 { font-size: clamp(2.5rem, 8vw, 6rem); }
+      .text-fluid-h2 { font-size: clamp(2rem, 5vw, 4rem); }
+
+      @keyframes float {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        50% { transform: translateY(-15px) rotate(3deg); }
+      }
+      .animate-float { animation: float 5s ease-in-out infinite; }
+
+      @keyframes spin-slow {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      .animate-spin-slow { animation: spin-slow 8s linear infinite; }
+
+      @keyframes reveal-in {
+        from { opacity: 0; transform: translateY(40px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      .reveal { animation: reveal-in 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+      .bg-mesh {
+        background-color: var(--bg-main);
+        background-image: 
+          radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.1) 0px, transparent 50%),
+          radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.1) 0px, transparent 50%),
+          radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
+          radial-gradient(at 0% 100%, rgba(234, 179, 8, 0.1) 0px, transparent 50%);
+      }
+
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
+  }
+}
+</script>
+</head>
+  <body class="selection:bg-purple-200 selection:text-purple-900 bg-mesh">
+    <div id="root"></div>
+  </body>
+</html>
