@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, Mic, Palette, Trash2 } from 'lucide-react';
+import { Sparkles, Mic, Palette, Trash2, Brush } from 'lucide-react';
 
 interface SeparatorProps {
   type: 'piano' | 'notes' | 'paint';
@@ -10,16 +10,6 @@ interface FloatingNote {
   label: string;
   x: number;
   y: number;
-}
-
-interface PaintParticle {
-  id: number;
-  x: number;
-  y: number;
-  size: number;
-  color: string;
-  rotation: number;
-  shape: string;
 }
 
 const noteFrequencies: Record<string, number> = {
@@ -43,67 +33,93 @@ const getAudioContext = () => {
   return new AudioContextClass();
 };
 
+// Create an Impulse Response for Reverb (Simulates a large hall)
+const createReverbBuffer = (ctx: AudioContext) => {
+  const duration = 2.0;
+  const decay = 2.0;
+  const sampleRate = ctx.sampleRate;
+  const length = sampleRate * duration;
+  const impulse = ctx.createBuffer(2, length, sampleRate);
+  const left = impulse.getChannelData(0);
+  const right = impulse.getChannelData(1);
+
+  for (let i = 0; i < length; i++) {
+    const n = i / length;
+    // Exponential decay noise
+    left[i] = (Math.random() * 2 - 1) * Math.pow(1 - n, decay);
+    right[i] = (Math.random() * 2 - 1) * Math.pow(1 - n, decay);
+  }
+  return impulse;
+};
+
 const SectionSeparator: React.FC<SeparatorProps> = ({ type }) => {
   const [activeNotes, setActiveNotes] = useState<FloatingNote[]>([]);
   const [pressedKey, setPressedKey] = useState<string | null>(null);
   const [showHint, setShowHint] = useState(true);
+  
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const reverbNodeRef = useRef<ConvolverNode | null>(null);
+  const masterCompressorRef = useRef<DynamicsCompressorNode | null>(null);
   
   // Refs for interactions
   const isDragging = useRef(false);
   const lastKeyId = useRef<string | null>(null);
   const pianoContainerRef = useRef<HTMLDivElement>(null);
 
-  // --- PAINT STATE ---
-  const [particles, setParticles] = useState<PaintParticle[]>([]);
+  // --- PAINT STATE (CANVAS) ---
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const isDrawing = useRef(false);
+  const lastPos = useRef<{ x: number; y: number } | null>(null);
   const hueRef = useRef(0);
 
   // --- CHOIR STATE ---
   const [activeSingers, setActiveSingers] = useState<number[]>([]);
   
-  // Definiții voci cu frecvențe și formanți specifici
-  // Frecvențele notelor formează un acord de Do Major (C Major) extins
   const voices = [
     { 
       id: 0, 
-      note: 130.81, // C3 (Bas profund)
+      note: 130.81, // C3 (Bas)
       label: 'Bas', 
+      desc: 'Voce Groasă',
       color: 'bg-blue-600', 
       mouth: 'w-8 h-3 rounded-full',
-      formants: [600, 1000, 2400], // Rezonanță de piept
-      gains: [1, 0.5, 0.2] 
+      waveType: 'sawtooth' as OscillatorType, // Richer harmonics for male voice
+      filterFreq: 600
     },
     { 
       id: 1, 
       note: 196.00, // G3 (Tenor)
       label: 'Tenor', 
+      desc: 'Voce Medie',
       color: 'bg-green-500', 
       mouth: 'w-7 h-5 rounded-[1rem]',
-      formants: [650, 1100, 2600],
-      gains: [1, 0.6, 0.3]
+      waveType: 'sawtooth' as OscillatorType,
+      filterFreq: 900
     },
     { 
       id: 2, 
       note: 329.63, // E4 (Alto)
       label: 'Alto', 
+      desc: 'Voce Caldă',
       color: 'bg-pink-500', 
       mouth: 'w-6 h-6 rounded-full',
-      formants: [800, 1150, 2800], // Rezonanță mai caldă
-      gains: [1, 0.7, 0.4]
+      waveType: 'triangle' as OscillatorType, // Softer for female low voice
+      filterFreq: 1500
     },
     { 
       id: 3, 
       note: 523.25, // C5 (Sopran)
       label: 'Sopran', 
+      desc: 'Voce Înaltă',
       color: 'bg-yellow-400', 
       mouth: 'w-5 h-7 rounded-[2rem]',
-      formants: [850, 1200, 3000], // Rezonanță de cap (head voice)
-      gains: [0.8, 0.5, 0.2]
+      waveType: 'sine' as OscillatorType, // Purest for high voice
+      filterFreq: 3000
     }
   ];
 
-  // Păstrăm referințe către nodurile audio pentru a le putea opri individual
-  const activeVoicesRef = useRef<Record<number, { osc: OscillatorNode, gain: GainNode, lfo: OscillatorNode, filters: BiquadFilterNode[] } | null>>({});
+  // Store references to stop sounds later
+  const activeVoicesRef = useRef<Record<number, { oscs: OscillatorNode[], gain: GainNode } | null>>({});
 
   useEffect(() => {
     return () => {
@@ -113,7 +129,37 @@ const SectionSeparator: React.FC<SeparatorProps> = ({ type }) => {
 
   const initAudio = () => {
     if (!audioCtxRef.current) {
-      audioCtxRef.current = getAudioContext();
+      const ctx = getAudioContext();
+      audioCtxRef.current = ctx;
+
+      // Setup Master Effects Chain: Voices -> Compressor -> Reverb -> Destination
+      
+      // 1. Compressor (Glue everything together)
+      const compressor = ctx.createDynamicsCompressor();
+      compressor.threshold.value = -20;
+      compressor.knee.value = 40;
+      compressor.ratio.value = 12;
+      compressor.attack.value = 0;
+      compressor.release.value = 0.25;
+      
+      // 2. Reverb (Hall simulation)
+      const reverb = ctx.createConvolver();
+      reverb.buffer = createReverbBuffer(ctx);
+      
+      // 3. Dry/Wet Mix
+      // We connect compressor to destination (Dry) AND to Reverb (Wet)
+      compressor.connect(ctx.destination);
+      
+      // Reverb gain (Wet level)
+      const reverbGain = ctx.createGain();
+      reverbGain.gain.value = 0.4; // 40% reverb mix
+      
+      compressor.connect(reverb);
+      reverb.connect(reverbGain);
+      reverbGain.connect(ctx.destination);
+
+      masterCompressorRef.current = compressor;
+      reverbNodeRef.current = reverb;
     }
     if (audioCtxRef.current.state === 'suspended') {
       audioCtxRef.current.resume();
@@ -128,6 +174,7 @@ const SectionSeparator: React.FC<SeparatorProps> = ({ type }) => {
       const now = ctx.currentTime;
       const frequency = noteFrequencies[label] * Math.pow(2, octaveOffset);
       
+      // Simple Piano Synthesis
       const masterGain = ctx.createGain();
       const filter = ctx.createBiquadFilter();
       filter.type = 'lowpass';
@@ -135,11 +182,11 @@ const SectionSeparator: React.FC<SeparatorProps> = ({ type }) => {
       filter.frequency.exponentialRampToValueAtTime(frequency * 1.5, now + 1.5);
       
       const osc = ctx.createOscillator();
-      osc.type = 'triangle';
+      osc.type = 'triangle'; // Triangle is good for piano-like basic sound
       osc.frequency.setValueAtTime(frequency, now);
       
       masterGain.gain.setValueAtTime(0, now);
-      masterGain.gain.linearRampToValueAtTime(0.3, now + 0.02); 
+      masterGain.gain.linearRampToValueAtTime(0.2, now + 0.02); 
       masterGain.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
 
       osc.connect(masterGain);
@@ -164,124 +211,187 @@ const SectionSeparator: React.FC<SeparatorProps> = ({ type }) => {
     setTimeout(() => setActiveNotes((prev) => prev.filter((n) => n.id !== newNote.id)), 1200);
   };
 
-  // --- CHOIR LOGIC (FORMANT SYNTHESIS) ---
+  // --- CHOIR LOGIC (ENSEMBLE SYNTHESIS) ---
   const startSinging = (singerId: number) => {
     try {
       initAudio();
       const ctx = audioCtxRef.current!;
-      
-      if (activeVoicesRef.current[singerId]) return; // Deja cântă
+      const masterDest = masterCompressorRef.current || ctx.destination;
+
+      if (activeVoicesRef.current[singerId]) return;
 
       const voiceData = voices.find(v => v.id === singerId);
       if (!voiceData) return;
 
       const now = ctx.currentTime;
       
-      // 1. Sursa Principală (Sawtooth Wave - bogată în armonice)
-      const osc = ctx.createOscillator();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(voiceData.note, now);
-
-      // 2. Vibrato (LFO) - oscilație fină a pitch-ului pentru realism
-      const lfo = ctx.createOscillator();
-      lfo.frequency.value = 5.5; // Vibrato speed (Hz)
-      const lfoGain = ctx.createGain();
-      lfoGain.gain.value = voiceData.note * 0.015; // Vibrato depth (mai mare la note înalte)
+      // --- THE ENSEMBLE ENGINE ---
+      // We create 3 oscillators slightly detuned to simulate a group of singers (Chorus effect)
+      // This creates a "thick", natural sound instead of a robotic thin beep.
       
-      lfo.connect(lfoGain);
-      lfoGain.connect(osc.frequency);
-      lfo.start(now);
-
-      // 3. Filtre Formante (Vocal Tract) - Modelează "Ahhh"
-      // Creăm 3 filtre bandpass paralele
-      const filters: BiquadFilterNode[] = [];
-      const filterGains: GainNode[] = [];
+      const oscs: OscillatorNode[] = [];
+      const voiceGain = ctx.createGain();
       
-      const masterVoiceGain = ctx.createGain();
-      masterVoiceGain.gain.setValueAtTime(0, now);
-      masterVoiceGain.gain.linearRampToValueAtTime(0.2, now + 0.2); // Attack mai lent (human-like)
+      // Filter the sound to make it sound like a voice (remove harsh high frequencies)
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = voiceData.filterFreq;
+      filter.Q.value = 1;
 
-      voiceData.formants.forEach((freq, idx) => {
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.Q.value = 4; // Rezonanță
-        filter.frequency.value = freq;
-        
-        // Conectăm oscilatorul la filtru
+      // 1. Center Pitch
+      const osc1 = ctx.createOscillator();
+      osc1.type = voiceData.waveType;
+      osc1.frequency.value = voiceData.note;
+      
+      // 2. Slightly Flat (-8 cents)
+      const osc2 = ctx.createOscillator();
+      osc2.type = voiceData.waveType;
+      osc2.frequency.value = voiceData.note;
+      osc2.detune.value = -8; 
+
+      // 3. Slightly Sharp (+8 cents)
+      const osc3 = ctx.createOscillator();
+      osc3.type = voiceData.waveType;
+      osc3.frequency.value = voiceData.note;
+      osc3.detune.value = 8;
+
+      oscs.push(osc1, osc2, osc3);
+
+      // Connect everything
+      oscs.forEach(osc => {
         osc.connect(filter);
-        
-        // Ajustăm volumul formantului
-        const fGain = ctx.createGain();
-        fGain.gain.value = voiceData.gains[idx];
-        filter.connect(fGain);
-        fGain.connect(masterVoiceGain);
-        
-        filters.push(filter);
-        filterGains.push(fGain);
+        osc.start(now);
       });
 
-      // Conectăm la ieșire
-      const compressor = ctx.createDynamicsCompressor(); // Previne distorsiunea când cântă toți
-      masterVoiceGain.connect(compressor);
-      compressor.connect(ctx.destination);
+      filter.connect(voiceGain);
+      voiceGain.connect(masterDest);
 
-      osc.start(now);
+      // Envelope (Attack) - Soft Fade In
+      voiceGain.gain.setValueAtTime(0, now);
+      voiceGain.gain.linearRampToValueAtTime(0.15, now + 0.3); // Slower attack = more human
+
+      // Add Vibrato (LFO)
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = 4.5; // Hz (Vibrato speed)
+      const lfoGain = ctx.createGain();
+      lfoGain.gain.value = 4; // Vibrato depth
+      lfo.connect(lfoGain);
       
-      // Salvăm referințele
-      activeVoicesRef.current[singerId] = { osc, gain: masterVoiceGain, lfo, filters };
+      // Connect vibrato to all oscillators
+      oscs.forEach(osc => lfoGain.connect(osc.frequency));
+      lfo.start(now);
+      oscs.push(lfo); // Add LFO to array to stop it later
+
+      activeVoicesRef.current[singerId] = { oscs, gain: voiceGain };
       setActiveSingers(prev => [...prev, singerId]);
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const stopSinging = (singerId: number) => {
     const voiceNode = activeVoicesRef.current[singerId];
     const ctx = audioCtxRef.current;
-
     if (voiceNode && ctx) {
-      const { osc, gain, lfo } = voiceNode;
+      const { oscs, gain } = voiceNode;
       const now = ctx.currentTime;
       
-      // Release natural (coadă scurtă)
+      // Release (Fade Out)
       gain.gain.cancelScheduledValues(now);
       gain.gain.setValueAtTime(gain.gain.value, now);
-      gain.gain.linearRampToValueAtTime(0, now + 0.3); // 300ms release
+      gain.gain.linearRampToValueAtTime(0, now + 0.4); // Natural release
 
-      osc.stop(now + 0.35);
-      lfo.stop(now + 0.35);
+      // Stop oscillators after release
+      oscs.forEach(osc => {
+        try { osc.stop(now + 0.5); } catch(e){}
+      });
     }
-
     activeVoicesRef.current[singerId] = null;
     setActiveSingers(prev => prev.filter(id => id !== singerId));
   };
 
-  // --- PAINT LOGIC ---
-  const addPaintParticle = (x: number, y: number) => {
-    hueRef.current = (hueRef.current + 5) % 360;
-    const color = `hsl(${hueRef.current}, 85%, 65%)`;
-    const id = Date.now() + Math.random();
+  // --- PAINT LOGIC (CANVAS BRUSH) ---
+  
+  useEffect(() => {
+    if (type !== 'paint') return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
     
-    const r = () => Math.floor(Math.random() * 40 + 30);
-    const shape = `${r()}% ${r()}% ${r()}% ${r()}% / ${r()}% ${r()}% ${r()}% ${r()}%`;
-
-    const newParticle: PaintParticle = {
-      id,
-      x,
-      y,
-      size: Math.random() * 25 + 15,
-      color,
-      rotation: Math.random() * 360,
-      shape: shape
+    const setSize = () => {
+      const rect = canvas.parentElement?.getBoundingClientRect();
+      if (rect) {
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+      }
     };
+    setSize();
+    window.addEventListener('resize', setSize);
+    return () => window.removeEventListener('resize', setSize);
+  }, [type]);
 
-    setParticles(prev => [...prev, newParticle].slice(-200));
-    if (showHint) setShowHint(false);
+  const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+    if ((e.target as HTMLElement).closest('button')) return;
+    isDrawing.current = true;
+    setShowHint(false);
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    
+    lastPos.current = {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
+    
+    draw(e); 
+  };
+
+  const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDrawing.current || !lastPos.current || !canvasRef.current) return;
+    if ((e.target as HTMLElement).closest('button')) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    
+    const currentX = clientX - rect.left;
+    const currentY = clientY - rect.top;
+
+    hueRef.current = (hueRef.current + 2) % 360;
+    
+    ctx.beginPath();
+    ctx.moveTo(lastPos.current.x, lastPos.current.y);
+    ctx.lineTo(currentX, currentY);
+    
+    ctx.strokeStyle = `hsl(${hueRef.current}, 75%, 60%)`;
+    ctx.lineWidth = 20; 
+    ctx.lineCap = 'round'; 
+    ctx.lineJoin = 'round';
+    
+    ctx.shadowBlur = 2;
+    ctx.shadowColor = 'rgba(0,0,0,0.1)';
+    
+    ctx.stroke();
+
+    lastPos.current = { x: currentX, y: currentY };
+  };
+
+  const stopDrawing = () => {
+    isDrawing.current = false;
+    lastPos.current = null;
   };
 
   const clearCanvas = () => {
-    setParticles([]);
-    setShowHint(true);
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx?.clearRect(0, 0, canvas.width, canvas.height);
+      setShowHint(true);
+    }
   };
 
   // --- EVENT HANDLERS ---
@@ -304,11 +414,11 @@ const SectionSeparator: React.FC<SeparatorProps> = ({ type }) => {
         {showHint && (
           <div className="absolute top-0 animate-bounce flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-lg border border-purple-100 z-20">
             <Sparkles size={14} className="text-yellow-500" />
-            <span className="text-xs font-bold text-purple-600">Trece mouse-ul peste fețe! 🎤</span>
+            <span className="text-xs font-bold text-purple-600">Ascultă diferența! 🎵</span>
           </div>
         )}
         
-        <div className="flex gap-4 sm:gap-8 items-end h-48 sm:h-52">
+        <div className="flex flex-wrap justify-center gap-6 sm:gap-10 items-end min-h-[220px]">
           {voices.map((voice) => {
             const isSinging = activeSingers.includes(voice.id);
             return (
@@ -318,39 +428,45 @@ const SectionSeparator: React.FC<SeparatorProps> = ({ type }) => {
                 onMouseLeave={() => stopSinging(voice.id)}
                 onTouchStart={(e) => { e.preventDefault(); startSinging(voice.id); }}
                 onTouchEnd={(e) => { e.preventDefault(); stopSinging(voice.id); }}
-                className={`relative flex flex-col items-center justify-end transition-all duration-300 ${isSinging ? '-translate-y-4 scale-110' : 'hover:-translate-y-2'}`}
+                className={`relative group flex flex-col items-center justify-end transition-all duration-300 ${isSinging ? '-translate-y-4 scale-110' : 'hover:-translate-y-2'}`}
               >
                  {/* Voice Bubble */}
                  <div className={`
-                    w-16 h-16 sm:w-20 sm:h-20 rounded-full shadow-xl flex items-center justify-center 
-                    transition-all duration-200 border-4 border-white
-                    ${voice.color} ${isSinging ? 'ring-4 ring-offset-2 ring-purple-300 brightness-110' : ''}
+                    w-20 h-20 sm:w-24 sm:h-24 rounded-full shadow-xl flex items-center justify-center 
+                    transition-all duration-200 border-4 border-white cursor-pointer
+                    ${voice.color} ${isSinging ? 'ring-4 ring-offset-2 ring-purple-300 brightness-110' : 'hover:brightness-105'}
                  `}>
-                    <div className="flex flex-col items-center gap-1">
-                      {/* Eyes - blink on sing */}
-                      <div className="flex gap-2">
+                    <div className="flex flex-col items-center gap-2">
+                      {/* Eyes */}
+                      <div className="flex gap-3">
                         <div className={`bg-white rounded-full transition-all ${isSinging ? 'w-2 h-2' : 'w-2 h-1'}`}></div>
                         <div className={`bg-white rounded-full transition-all ${isSinging ? 'w-2 h-2' : 'w-2 h-1'}`}></div>
                       </div>
-                      {/* Mouth - animated opening */}
-                      <div className={`bg-gray-900 transition-all duration-200 ${isSinging ? `${voice.mouth} border-2 border-white scale-125` : 'w-3 h-1 rounded-full'}`}></div>
+                      {/* Mouth */}
+                      <div className={`bg-gray-900 transition-all duration-200 ${isSinging ? `${voice.mouth} border-2 border-white scale-125` : 'w-4 h-1 rounded-full'}`}></div>
                     </div>
                  </div>
                  
-                 {/* Body/Stand */}
-                 <div className="w-1 h-8 bg-gray-300 mt-[-2px] -z-10"></div>
-                 <div className="w-8 h-1 bg-gray-300 rounded-full"></div>
+                 {/* Body Stand */}
+                 <div className="w-1.5 h-10 bg-gray-200 mt-[-2px] -z-10 group-hover:bg-gray-300 transition-colors"></div>
+                 <div className="w-12 h-1.5 bg-gray-200 rounded-full group-hover:bg-gray-300 transition-colors"></div>
 
-                 {/* Musical Note Particles */}
+                 {/* Feedback Particles */}
                  {isSinging && (
                    <div className="absolute -top-12 animate-float opacity-80 flex flex-col items-center">
-                     <Mic size={24} className={voice.color.replace('bg-', 'text-')} />
+                     <Mic size={28} className={voice.color.replace('bg-', 'text-')} />
                    </div>
                  )}
                  
-                 <span className={`mt-3 text-xs font-black uppercase tracking-wider ${isSinging ? 'text-purple-600' : 'text-gray-400'}`}>
-                   {voice.label}
-                 </span>
+                 {/* Labels */}
+                 <div className="mt-3 text-center">
+                    <span className={`block text-sm font-black uppercase tracking-wider ${isSinging ? 'text-purple-600' : 'text-gray-800'}`}>
+                      {voice.label}
+                    </span>
+                    <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                      {voice.desc}
+                    </span>
+                 </div>
               </div>
             );
           })}
@@ -359,62 +475,46 @@ const SectionSeparator: React.FC<SeparatorProps> = ({ type }) => {
     );
   }
 
-  if (type === 'paint') { // PAINTING
+  if (type === 'paint') { // PAINTING - CANVAS MODE
     return (
-      <div 
-        className="relative w-full h-48 sm:h-72 flex flex-col items-center justify-center overflow-hidden my-8 touch-none cursor-crosshair bg-gray-50/50"
-        onMouseMove={(e) => {
-          if ((e.target as HTMLElement).closest('button')) return;
-          const rect = e.currentTarget.getBoundingClientRect();
-          addPaintParticle(e.clientX - rect.left, e.clientY - rect.top);
-        }}
-        onTouchMove={(e) => {
-          if ((e.target as HTMLElement).closest('button')) return;
-          e.preventDefault(); 
-          const rect = e.currentTarget.getBoundingClientRect();
-          const touch = e.touches[0];
-          addPaintParticle(touch.clientX - rect.left, touch.clientY - rect.top);
-        }}
-      >
+      <div className="relative w-full h-48 sm:h-72 my-8 bg-gray-50/50 flex items-center justify-center overflow-hidden">
+        {/* Background Texture */}
+        <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#ccc 1px, transparent 1px)', backgroundSize: '10px 10px' }}></div>
         <div className="absolute inset-0 border-y-2 border-dashed border-gray-200 pointer-events-none"></div>
-        
+
+        {/* Clear Button */}
         <button 
           onClick={clearCanvas}
           className="absolute top-4 right-4 z-20 bg-white p-2.5 rounded-xl shadow-lg border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-100 transition-all active:scale-95 flex items-center gap-2 group"
-          title="Șterge tot"
+          title="Curăță Pânza"
         >
-          <span className="text-xs font-bold uppercase hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity">Șterge</span>
+          <span className="text-xs font-bold uppercase hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity">Șterge Tot</span>
           <Trash2 size={20} />
         </button>
 
         {showHint && (
           <div className="pointer-events-none absolute flex flex-col items-center gap-2 animate-pulse opacity-60 z-10">
-            <Palette size={48} className="text-gray-300" />
-            <span className="text-sm font-black text-gray-400 uppercase tracking-widest">Desenează cu degetul! 🎨</span>
+            <Brush size={40} className="text-gray-400 rotate-12" />
+            <span className="text-sm font-black text-gray-400 uppercase tracking-widest bg-white/80 px-2 py-1 rounded-md">Desenează liber! 🎨</span>
           </div>
         )}
 
-        {particles.map((p) => (
-          <div
-            key={p.id}
-            className="absolute pointer-events-none animate-rebound"
-            style={{
-              left: p.x,
-              top: p.y,
-              width: p.size,
-              height: p.size,
-              backgroundColor: p.color,
-              borderRadius: p.shape,
-              transform: `translate(-50%, -50%) rotate(${p.rotation}deg)`,
-              boxShadow: `inset -2px -2px 4px rgba(0,0,0,0.1), 0 2px 5px ${p.color}40`
-            }}
-          />
-        ))}
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full cursor-crosshair touch-none"
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
+        />
       </div>
     );
   }
 
-  // PIANO (unchanged visual structure, using updated helpers)
+  // PIANO
   const whiteKeys = ['do', 're', 'mi', 'fa', 'sol', 'la', 'si'];
   const blackKeys = [
     { label: 'do#', left: '14.28%' },
