@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Sun, Moon, Volume2, VolumeX, Sparkles } from 'lucide-react';
+import { Menu, X, Sun, Moon, Volume2, VolumeX, Sparkles, Phone, MessageCircle } from 'lucide-react';
 
 interface HeaderProps {
   activeSection: string;
@@ -39,33 +39,30 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const Logo = () => (
-    <div className="flex items-center gap-2 cursor-pointer group">
-      <div className="relative w-10 h-10 flex items-center justify-center bg-gray-900 rounded-xl overflow-hidden shadow-xl transform group-hover:rotate-12 transition-transform duration-300">
-        <span className="text-white font-black text-xl italic leading-none">V</span>
-        <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/40 to-pink-500/40"></div>
-      </div>
-      <div className="flex flex-col leading-none">
-        <span className={`text-xl font-black tracking-tight ${isMagicMode || isOpen ? 'text-white' : 'text-gray-900'}`}>VoiceUp</span>
-        <span className="text-[8px] font-black text-purple-500 tracking-[0.25em] uppercase">School of Arts</span>
-      </div>
+    <div className="p-2 hover:scale-105 transition-transform duration-300 cursor-pointer">
+      <img 
+        src="https://i.postimg.cc/1tWHG5Z8/voiceup-school-final.png" 
+        alt="VoiceUp Logo" 
+        className="h-10 md:h-14 w-auto object-contain" 
+      />
     </div>
   );
 
   return (
     <header className="fixed top-4 left-4 right-4 z-[100]">
-      <nav className={`max-w-6xl mx-auto flex items-center justify-between px-5 py-3 rounded-[2rem] shadow-[0_10px_30px_rgba(0,0,0,0.08)] border transition-all duration-700 ${isMagicMode ? 'bg-indigo-950/90 border-indigo-400/20 backdrop-blur-xl' : 'bg-white/95 border-white backdrop-blur-md'}`}>
+      <nav className={`max-w-6xl mx-auto flex items-center justify-between px-4 py-2.5 rounded-[2rem] shadow-[0_10px_30px_rgba(0,0,0,0.08)] border transition-all duration-700 ${isMagicMode ? 'bg-indigo-950/90 border-indigo-400/20 backdrop-blur-xl' : 'bg-white/95 border-white backdrop-blur-md'}`}>
         <div onClick={() => scrollTo('hero')}>
           <Logo />
         </div>
 
-        {/* Desktop Navigation - Kept larger text size as requested for the menu */}
-        <div className="hidden lg:flex items-center gap-3">
+        {/* Desktop Navigation */}
+        <div className="hidden lg:flex items-center gap-2">
           {menuItems.map((item) => (
             <button
               key={item.id}
               onClick={() => scrollTo(item.id)}
               onMouseEnter={playPop}
-              className={`px-4 py-2.5 rounded-full text-sm font-black uppercase tracking-wider transition-all duration-300 ${
+              className={`px-3 xl:px-4 py-2.5 rounded-full text-xs xl:text-sm font-black uppercase tracking-wider transition-all duration-300 ${
                 activeSection === item.id 
                 ? 'bg-purple-600 text-white shadow-lg' 
                 : isMagicMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-purple-600'
@@ -77,23 +74,23 @@ const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           <button 
             onClick={() => { setIsMuted(!isMuted); playPop(); }}
-            className={`p-3 rounded-full transition-all ${isMagicMode ? 'bg-white/10 text-white' : 'bg-gray-100 text-gray-500'}`}
+            className={`p-2.5 md:p-3 rounded-full transition-all ${isMagicMode ? 'bg-white/10 text-white' : 'bg-gray-100 text-gray-500'}`}
           >
-            {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+            {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
           </button>
           
           <button 
             onClick={() => { setIsMagicMode(!isMagicMode); playPop(); }}
-            className={`p-3 rounded-full transition-all flex items-center gap-2 ${isMagicMode ? 'bg-yellow-400 text-indigo-950 shadow-lg' : 'bg-indigo-950 text-white shadow-md'}`}
+            className={`p-2.5 md:p-3 rounded-full transition-all flex items-center gap-2 ${isMagicMode ? 'bg-yellow-400 text-indigo-950 shadow-lg' : 'bg-indigo-950 text-white shadow-md'}`}
           >
-            {isMagicMode ? <Sun size={20} className="animate-spin-slow" /> : <Moon size={20} />}
+            {isMagicMode ? <Sun size={18} className="animate-spin-slow" /> : <Moon size={18} />}
           </button>
 
           <button 
-            className={`lg:hidden p-3 rounded-xl transition-all ${isOpen ? 'bg-pink-500 text-white' : isMagicMode ? 'bg-white/10 text-white' : 'bg-purple-50 text-purple-600'}`}
+            className={`lg:hidden p-2.5 rounded-xl transition-all ${isOpen ? 'bg-pink-500 text-white' : isMagicMode ? 'bg-white/10 text-white' : 'bg-purple-50 text-purple-600'}`}
             onClick={() => setIsOpen(!isOpen)}
           >
             {isOpen ? <X size={24} /> : <Menu size={24} />}
@@ -101,7 +98,7 @@ const Header: React.FC<HeaderProps> = ({
         </div>
       </nav>
 
-      {/* High-End Mobile Menu with Vibrant Bold Typography */}
+      {/* High-End Mobile Menu */}
       {isOpen && (
         <div className={`fixed inset-0 z-[110] lg:hidden flex flex-col ${isMagicMode ? 'bg-[#060111]' : 'bg-[#fffdfd]'}`}>
            {/* Dynamic Background */}
@@ -121,9 +118,9 @@ const Header: React.FC<HeaderProps> = ({
               </button>
            </div>
 
-           {/* Balanced Grid - Legible Bold Text */}
-           <div className="flex-grow flex items-center justify-center px-6 relative z-10">
-              <div className="grid grid-cols-2 gap-x-8 gap-y-12 w-full max-w-sm">
+           {/* Menu Grid */}
+           <div className="flex-grow flex items-center justify-center px-6 relative z-10 overflow-y-auto">
+              <div className="grid grid-cols-2 gap-x-8 gap-y-10 w-full max-w-sm py-4">
                 {menuItems.map((item, idx) => {
                   const firstLetter = item.name.charAt(0);
                   const restOfName = item.name.slice(1);
@@ -133,19 +130,15 @@ const Header: React.FC<HeaderProps> = ({
                     <button
                       key={item.id}
                       onClick={() => scrollTo(item.id)}
-                      className="relative flex flex-col items-center justify-center group touch-manipulation hover-rubber animate-rebound opacity-0"
-                      style={{ animationDelay: `${idx * 0.08}s` }}
+                      className="relative flex flex-col items-center justify-center group touch-manipulation hover-rubber"
                     >
-                      {/* Active Indicator Glow */}
-                      <div className={`absolute inset-[-15px] rounded-full blur-2xl opacity-0 transition-opacity duration-300 group-active:opacity-100 ${item.shadow}`}></div>
-
-                      {/* Professional Typographic Layout - No overlap */}
+                      {/* Removed opacity-0 default and fixed colors for visibility */}
                       <div className="flex items-center justify-center relative z-10">
                         <span className={`text-6xl font-[900] leading-none ${item.color} ${isMagicMode ? 'text-glow' : 'drop-shadow-sm'}`}>
                           {firstLetter}
                         </span>
                         
-                        <span className={`text-2xl font-[900] ml-1 tracking-tight transition-colors duration-500 ${isActive ? 'text-purple-600' : isMagicMode ? 'text-white' : 'text-gray-900'}`}>
+                        <span className={`text-2xl font-[900] ml-1 tracking-tight ${isActive ? 'text-purple-600' : isMagicMode ? 'text-white' : 'text-gray-800'}`}>
                           {restOfName}
                         </span>
                         
@@ -163,12 +156,17 @@ const Header: React.FC<HeaderProps> = ({
               </div>
            </div>
 
-           {/* Minimal Menu Footer */}
-           <div className="p-10 text-center relative z-10 mt-auto">
-              <div className="inline-block px-10 py-4 rounded-full border border-purple-100/30 bg-purple-500/5 backdrop-blur-md">
-                <span className="text-purple-600 font-[900] text-[12px] uppercase tracking-[0.5em] opacity-60">
-                  VoiceUp &bull; Explore Art
-                </span>
+           {/* Functional Footer Buttons */}
+           <div className="p-6 relative z-10 mt-auto bg-gradient-to-t from-white via-white to-transparent dark:from-black dark:via-black">
+              <div className="flex gap-4 justify-center">
+                 <a href="tel:0712345678" className="flex-1 flex items-center justify-center gap-2 py-4 bg-green-500 text-white rounded-2xl shadow-lg font-black text-lg active:scale-95 transition-transform">
+                    <Phone size={24} />
+                    Suna
+                 </a>
+                 <a href="https://wa.me/40712345678" className="flex-1 flex items-center justify-center gap-2 py-4 bg-[#25D366] text-white rounded-2xl shadow-lg font-black text-lg active:scale-95 transition-transform">
+                    <MessageCircle size={24} />
+                    WhatsApp
+                 </a>
               </div>
            </div>
         </div>

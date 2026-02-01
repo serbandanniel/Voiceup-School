@@ -132,7 +132,8 @@ const EnrollmentForm: React.FC = () => {
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Updated Layout: Vertical Stack with Horizontal Item Content */}
+                <div className="flex flex-col gap-3">
                   {plans.map((plan) => {
                     const isSelected = selectedPlan === plan.id;
                     const isPro = plan.id === 'Pro';
@@ -141,21 +142,25 @@ const EnrollmentForm: React.FC = () => {
                         key={plan.id}
                         type="button"
                         onClick={() => setSelectedPlan(plan.id)}
-                        className={`relative flex flex-col items-center p-3 rounded-2xl border-2 transition-all duration-300 
+                        className={`relative w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-300 
                           ${isSelected 
-                            ? 'bg-gray-900 border-gray-900 text-white shadow-lg scale-105 z-10' 
-                            : 'bg-white border-gray-100 text-gray-600 hover:border-purple-200'
+                            ? 'bg-gray-900 border-gray-900 text-white shadow-lg scale-[1.02] z-10' 
+                            : 'bg-white border-gray-100 text-gray-600 hover:border-purple-200 hover:bg-gray-50'
                           } 
-                          ${isPro && !isSelected ? 'animate-wiggle-slow border-purple-200 shadow-purple-100' : ''}
+                          ${isPro && !isSelected ? 'border-purple-200 shadow-purple-100' : ''}
                         `}
                       >
                         {isPro && !isSelected && (
-                          <div className="absolute -top-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-sm uppercase tracking-wider">
+                          <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[10px] font-black px-3 py-0.5 rounded-full shadow-sm uppercase tracking-wider">
                             Recomandat
                           </div>
                         )}
-                        <span className="text-sm font-black mb-1">{plan.id}</span>
-                        <span className={`text-xs ${isSelected ? 'text-gray-300' : 'text-purple-600 font-bold'}`}>{plan.price}</span>
+                        
+                        {/* Name on Left */}
+                        <span className="text-base font-black tracking-tight">{plan.id}</span>
+                        
+                        {/* Price on Right - BIGGER */}
+                        <span className={`text-xl font-black ${isSelected ? 'text-white' : 'text-purple-600'}`}>{plan.price}</span>
                       </button>
                     );
                   })}

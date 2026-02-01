@@ -11,11 +11,13 @@ import EnrollmentForm from './components/EnrollmentForm';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
 import SectionSeparator from './components/SectionSeparator';
+import CourseDetail from './components/CourseDetail';
 
 const App: React.FC = () => {
   const [activeSection, setActiveSection] = useState('hero');
   const [isMagicMode, setIsMagicMode] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [currentView, setCurrentView] = useState('home'); // 'home', 'canto', 'piano', 'painting'
 
   // Audio Feedback Logic
   const playPop = useCallback(() => {
@@ -45,6 +47,8 @@ const App: React.FC = () => {
   }, [isMagicMode]);
 
   useEffect(() => {
+    if (currentView !== 'home') return;
+
     const handleScroll = () => {
       const sections = ['hero', 'about', 'courses', 'teachers', 'gallery', 'reviews', 'pricing', 'enroll', 'contact'];
       const scrollPosition = window.scrollY + 200;
@@ -72,7 +76,14 @@ const App: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     handleScroll(); // Initial check
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [currentView]);
+
+  const handleEnrollFromDetail = () => {
+    setCurrentView('home');
+    setTimeout(() => {
+      document.getElementById('enroll')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
 
   return (
     <div className={`relative min-h-screen selection:bg-purple-500 selection:text-white bg-mesh transition-colors duration-700`}>
@@ -86,57 +97,67 @@ const App: React.FC = () => {
       />
       
       <main>
-        <section id="hero">
-          <Hero playPop={playPop} />
-        </section>
+        {currentView === 'home' ? (
+          <>
+            <section id="hero">
+              <Hero playPop={playPop} />
+            </section>
 
-        <SectionSeparator type="piano" />
-        
-        <section id="about" className="py-2 reveal-on-scroll opacity-0">
-          <About />
-        </section>
+            <SectionSeparator type="piano" />
+            
+            <section id="about" className="py-2 reveal-on-scroll opacity-0">
+              <About />
+            </section>
 
-        <SectionSeparator type="paint" />
+            <SectionSeparator type="paint" />
 
-        <section id="courses" className="py-2 reveal-on-scroll opacity-0">
-          <Courses playPop={playPop} />
-        </section>
+            <section id="courses" className="py-2 reveal-on-scroll opacity-0">
+              <Courses playPop={playPop} onViewDetails={setCurrentView} />
+            </section>
 
-        <SectionSeparator type="notes" />
+            <SectionSeparator type="notes" />
 
-        <section id="teachers" className="py-2 reveal-on-scroll opacity-0">
-          <Teachers />
-        </section>
+            <section id="teachers" className="py-2 reveal-on-scroll opacity-0">
+              <Teachers />
+            </section>
 
-        <SectionSeparator type="paint" />
+            <SectionSeparator type="paint" />
 
-        <section id="gallery" className="py-2 reveal-on-scroll opacity-0">
-          <Gallery />
-        </section>
+            <section id="gallery" className="py-2 reveal-on-scroll opacity-0">
+              <Gallery />
+            </section>
 
-        <SectionSeparator type="notes" />
+            <SectionSeparator type="notes" />
 
-        <section id="reviews" className="py-2 reveal-on-scroll opacity-0">
-          <Reviews />
-        </section>
+            <section id="reviews" className="py-2 reveal-on-scroll opacity-0">
+              <Reviews />
+            </section>
 
-        <SectionSeparator type="piano" />
+            <SectionSeparator type="piano" />
 
-        <section id="pricing" className="py-2 reveal-on-scroll opacity-0">
-          <Pricing playPop={playPop} />
-        </section>
+            <section id="pricing" className="py-2 reveal-on-scroll opacity-0">
+              <Pricing playPop={playPop} />
+            </section>
 
-        <SectionSeparator type="paint" />
+            <SectionSeparator type="paint" />
 
-        <section id="enroll" className="py-2 reveal-on-scroll opacity-0">
-          <EnrollmentForm />
-        </section>
+            <section id="enroll" className="py-2 reveal-on-scroll opacity-0">
+              <EnrollmentForm />
+            </section>
 
-        <SectionSeparator type="notes" />
+            <SectionSeparator type="notes" />
 
-        <section id="contact" className="py-2 reveal-on-scroll opacity-0">
-          <Contact />
-        </section>
+            <section id="contact" className="py-2 reveal-on-scroll opacity-0">
+              <Contact />
+            </section>
+          </>
+        ) : (
+          <CourseDetail 
+            courseId={currentView} 
+            onBack={() => setCurrentView('home')} 
+            onEnroll={handleEnrollFromDetail} 
+          />
+        )}
       </main>
 
       <Footer />

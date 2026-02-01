@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Heart } from 'lucide-react';
 
@@ -10,11 +9,12 @@ const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-4 gap-12 border-b border-gray-800/50 pb-12 mb-8">
         <div className="space-y-6">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-white/5 rounded-2xl p-2 flex items-center justify-center border border-white/10">
+            {/* Transparent background for logo */}
+            <div className="w-16 h-16 p-2 flex items-center justify-center">
                <img 
-                 src="https://raw.githubusercontent.com/StackBlitz/stackblitz-images/main/voiceup-logo.png" 
+                 src="https://i.postimg.cc/1tWHG5Z8/voiceup-school-final.png" 
                  alt="Footer Logo" 
-                 className="w-full h-full object-contain mix-blend-screen scale-150"
+                 className="w-full h-full object-contain"
                />
             </div>
             <div className="flex flex-col">

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { MapPin, Phone, Mail, Instagram, Facebook } from 'lucide-react';
 import SectionHeader from './SectionHeader';
@@ -14,11 +13,12 @@ const Contact: React.FC = () => {
       <div className="grid md:grid-cols-2 gap-12 items-center">
         <div className="space-y-8">
           <div className="flex items-center gap-6 mb-8 p-6 bg-white rounded-[2.5rem] shadow-xl border-4 border-purple-50">
-             <div className="w-24 h-24 bg-gray-900 rounded-2xl flex items-center justify-center p-2">
+             {/* Transparent background container */}
+             <div className="w-24 h-24 rounded-2xl flex items-center justify-center p-2">
                 <img 
-                  src="https://raw.githubusercontent.com/StackBlitz/stackblitz-images/main/voiceup-logo.png" 
+                  src="https://i.postimg.cc/1tWHG5Z8/voiceup-school-final.png" 
                   alt="Contact Logo" 
-                  className="w-full h-full object-contain mix-blend-screen scale-125"
+                  className="w-full h-full object-contain"
                 />
              </div>
              <div>

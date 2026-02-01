@@ -343,8 +343,9 @@ const SectionSeparator: React.FC<SeparatorProps> = ({ type }) => {
   // --- RENDERERS ---
 
   if (type === 'notes') { 
+    // Reduced padding and margins here to minimize bottom space
     return (
-      <div className="relative w-full py-16 flex flex-col items-center justify-center my-8 select-none">
+      <div className="relative w-full pt-12 pb-4 flex flex-col items-center justify-center my-4 select-none">
         {showHint && (
           <div className="absolute top-0 animate-bounce flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-lg border border-purple-100 z-20">
             <Music2 size={14} className="text-purple-500" />
@@ -358,7 +359,8 @@ const SectionSeparator: React.FC<SeparatorProps> = ({ type }) => {
                 <span className="text-xs font-bold uppercase tracking-widest">Se încarcă vocile...</span>
             </div>
         ) : (
-            <div className="flex flex-wrap justify-center gap-6 sm:gap-10 items-end min-h-[220px]">
+            // Adjusted min-height to ensure it doesn't take too much vertical space if not needed
+            <div className="flex flex-wrap justify-center gap-6 sm:gap-10 items-end min-h-[180px]">
             {voices.map((voice) => {
                 const isSinging = activeSingers.includes(voice.id);
                 return (
@@ -478,7 +480,8 @@ const SectionSeparator: React.FC<SeparatorProps> = ({ type }) => {
       onTouchEnd={handleEnd}
     >
       {showHint && (
-        <div className="absolute -top-14 animate-bounce flex items-center gap-3 bg-white px-5 py-2.5 rounded-full shadow-[0_10px_25px_rgba(139,92,246,0.2)] border-2 border-purple-100 z-[60] cursor-default pointer-events-none">
+        // Changed top position from -top-14 to -top-8 to bring it closer
+        <div className="absolute -top-8 animate-bounce flex items-center gap-3 bg-white px-5 py-2.5 rounded-full shadow-[0_10px_25px_rgba(139,92,246,0.2)] border-2 border-purple-100 z-[60] cursor-default pointer-events-none">
           <div className="bg-yellow-400 p-1 rounded-full">
             <Sparkles size={14} className="text-white" />
           </div>
