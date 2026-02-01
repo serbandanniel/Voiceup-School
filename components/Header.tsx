@@ -43,14 +43,14 @@ const Header: React.FC<HeaderProps> = ({
       <img 
         src="https://i.postimg.cc/1tWHG5Z8/voiceup-school-final.png" 
         alt="VoiceUp Logo" 
-        className="h-10 md:h-14 w-auto object-contain" 
+        className="h-12 md:h-16 w-auto object-contain" 
       />
     </div>
   );
 
   return (
     <header className="fixed top-4 left-4 right-4 z-[100]">
-      <nav className={`max-w-6xl mx-auto flex items-center justify-between px-4 py-2.5 rounded-[2rem] shadow-[0_10px_30px_rgba(0,0,0,0.08)] border transition-all duration-700 ${isMagicMode ? 'bg-indigo-950/90 border-indigo-400/20 backdrop-blur-xl' : 'bg-white/95 border-white backdrop-blur-md'}`}>
+      <nav className={`max-w-6xl mx-auto flex items-center justify-between px-4 py-2.5 rounded-[2rem] border transition-all duration-500 hover:shadow-[0_20px_40px_rgba(139,92,246,0.15)] hover:scale-[1.005] hover:border-purple-200 ${isMagicMode ? 'bg-indigo-950/90 border-indigo-400/20 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.2)]' : 'bg-white/95 border-white backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.08)]'}`}>
         <div onClick={() => scrollTo('hero')}>
           <Logo />
         </div>

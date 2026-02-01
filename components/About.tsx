@@ -30,9 +30,9 @@ const About: React.FC = () => {
                 className={`
                   p-6 bg-white rounded-[2rem] shadow-xl border-2 border-purple-50 
                   hover:shadow-2xl hover:scale-105 transition-all duration-300
+                  flex flex-col items-center text-center
                   ${i === 0 ? 'col-span-2' : 'col-span-1'} 
                   ${i === 0 ? 'md:col-span-2 lg:col-span-1' : 'md:col-span-1 lg:col-span-1'} 
-                  ${i === 0 && 'bg-gradient-to-br from-white to-purple-50'}
                 `}
               >
                 <div className="mb-4">{v.icon}</div>

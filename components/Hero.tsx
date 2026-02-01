@@ -1,6 +1,5 @@
 import React from 'react';
 import { PlayCircle, Music, Sparkles } from 'lucide-react';
-import FloatingElements from './FloatingElements';
 
 interface HeroProps {
   playPop: () => void;
@@ -10,7 +9,6 @@ const Hero: React.FC<HeroProps> = ({ playPop }) => {
   return (
     // Increased top padding (pt-32) on mobile to push image down from menu
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden pt-36 md:pt-28 pb-12 px-4">
-      <FloatingElements />
       
       <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none select-none opacity-50">
         <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-purple-200/40 rounded-full blur-[120px] animate-pulse"></div>
@@ -42,12 +40,12 @@ const Hero: React.FC<HeroProps> = ({ playPop }) => {
           </div>
           
           <h1 className="text-4xl sm:text-5xl lg:text-fluid-h1 font-black leading-[0.95] tracking-tighter">
-            <span className="block mb-2">Descoperă</span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 via-pink-500 to-blue-500">Muzica din Tine</span>
+            <span className="block mb-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 via-pink-500 to-blue-500 pb-2">Cântă. Creează.</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">Strălucește.</span>
           </h1>
           
           <p className="text-lg md:text-2xl opacity-90 max-w-xl mx-auto lg:mx-0 font-bold leading-relaxed px-2 md:px-0">
-            VoiceUp School: locul unde canto, pianul și pictura se întâlnesc pentru a crea viitorii artiști. Începe călătoria ta azi!
+            VoiceUp School este locul unde talentul nu are reguli. Fie că iubești microfonul, clapele sau culorile, aici găsești mentorii care te ajută să te exprimi liber.
           </p>
 
           {/* Added extra bottom margin (mb-12) on mobile to clear the piano hint */}
@@ -57,7 +55,7 @@ const Hero: React.FC<HeroProps> = ({ playPop }) => {
               onClick={() => document.getElementById('enroll')?.scrollIntoView({ behavior: 'smooth' })}
               className="w-full sm:w-auto group relative px-8 py-4 md:px-10 md:py-5 bg-purple-600 text-white rounded-[1.5rem] md:rounded-[2rem] font-black text-lg md:text-xl shadow-2xl hover:scale-105 transition-all active:scale-95 overflow-hidden"
             >
-              <span className="relative z-10 uppercase">Testare Gratuită!</span>
+              <span className="relative z-10 uppercase">Hai să ne cunoaștem!</span>
               <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </button>
             <button 

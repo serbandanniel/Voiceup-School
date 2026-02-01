@@ -12,12 +12,15 @@ import Contact from './components/Contact';
 import Footer from './components/Footer';
 import SectionSeparator from './components/SectionSeparator';
 import CourseDetail from './components/CourseDetail';
+import FloatingElements from './components/FloatingElements';
+import FullPhotoGallery from './components/FullPhotoGallery';
+import FullVideoGallery from './components/FullVideoGallery';
 
 const App: React.FC = () => {
   const [activeSection, setActiveSection] = useState('hero');
   const [isMagicMode, setIsMagicMode] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [currentView, setCurrentView] = useState('home'); // 'home', 'canto', 'piano', 'painting'
+  const [currentView, setCurrentView] = useState('home'); // 'home', 'canto', 'piano', 'painting', 'gallery-photo', 'gallery-video'
 
   // Audio Feedback Logic
   const playPop = useCallback(() => {
@@ -85,19 +88,26 @@ const App: React.FC = () => {
     }, 100);
   };
 
-  return (
-    <div className={`relative min-h-screen selection:bg-purple-500 selection:text-white bg-mesh transition-colors duration-700`}>
-      <Header 
-        activeSection={activeSection} 
-        isMagicMode={isMagicMode} 
-        setIsMagicMode={setIsMagicMode}
-        isMuted={isMuted}
-        setIsMuted={setIsMuted}
-        playPop={playPop}
-      />
-      
-      <main>
-        {currentView === 'home' ? (
+  // Render content based on currentView
+  const renderContent = () => {
+    switch (currentView) {
+      case 'canto':
+      case 'piano':
+      case 'painting':
+        return (
+          <CourseDetail 
+            courseId={currentView} 
+            onBack={() => setCurrentView('home')} 
+            onEnroll={handleEnrollFromDetail} 
+          />
+        );
+      case 'gallery-photo':
+        return <FullPhotoGallery onBack={() => setCurrentView('home')} />;
+      case 'gallery-video':
+        return <FullVideoGallery onBack={() => setCurrentView('home')} />;
+      case 'home':
+      default:
+        return (
           <>
             <section id="hero">
               <Hero playPop={playPop} />
@@ -124,7 +134,7 @@ const App: React.FC = () => {
             <SectionSeparator type="paint" />
 
             <section id="gallery" className="py-2 reveal-on-scroll opacity-0">
-              <Gallery />
+              <Gallery onViewAll={(type) => setCurrentView(type === 'photo' ? 'gallery-photo' : 'gallery-video')} />
             </section>
 
             <SectionSeparator type="notes" />
@@ -151,15 +161,31 @@ const App: React.FC = () => {
               <Contact />
             </section>
           </>
-        ) : (
-          <CourseDetail 
-            courseId={currentView} 
-            onBack={() => setCurrentView('home')} 
-            onEnroll={handleEnrollFromDetail} 
-          />
-        )}
+        );
+    }
+  };
+
+  return (
+    <div className={`relative min-h-screen selection:bg-purple-500 selection:text-white bg-mesh transition-colors duration-700`}>
+      {/* GLOBAL FLOATING ELEMENTS - Fixed position to appear everywhere */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <FloatingElements />
+      </div>
+
+      <Header 
+        activeSection={activeSection} 
+        isMagicMode={isMagicMode} 
+        setIsMagicMode={setIsMagicMode}
+        isMuted={isMuted}
+        setIsMuted={setIsMuted}
+        playPop={playPop}
+      />
+      
+      <main className="relative z-10">
+        {renderContent()}
       </main>
 
+      {/* Only show Footer on Home or dedicated pages, but usually good everywhere */}
       <Footer />
     </div>
   );
