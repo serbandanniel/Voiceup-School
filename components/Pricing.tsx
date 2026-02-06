@@ -1,38 +1,82 @@
 import React, { useState } from 'react';
 import SectionHeader from './SectionHeader';
-import { Check, Hand } from 'lucide-react';
+import { Check, Hand, Mic2, Music, Palette } from 'lucide-react';
 
-const Pricing: React.FC = () => {
-  const [activeTab, setActiveTab] = useState(1); // Default to 'Pro' (index 1) on mobile
+interface PricingProps {
+  playPop: () => void;
+}
 
+const Pricing: React.FC<PricingProps> = ({ playPop }) => {
+  const [activeCategory, setActiveCategory] = useState<'canto' | 'piano' | 'art'>('canto');
+
+  // Configurația prețurilor și a temelor pentru fiecare disciplină
+  const pricingConfig = {
+    canto: {
+      label: 'Canto',
+      icon: <Mic2 size={18} />,
+      themeColor: 'purple', // Folosim purple ca bază, dar accente pink
+      prices: { standard: '250', pro: '450', intensiv: '800' },
+      features: {
+        standard: ["Tehnică vocală de bază", "Respirație diafragmatică", "Repertoriu Pop/Jazz"],
+        pro: ["Interpretare scenică", "Microfon technique", "Pregătire concursuri"],
+        intensiv: ["Înregistrare studio", "Video performance", "Masterclass lunar"]
+      }
+    },
+    piano: {
+      label: 'Pian',
+      icon: <Music size={18} />,
+      themeColor: 'blue',
+      prices: { standard: '280', pro: '500', intensiv: '900' },
+      features: {
+        standard: ["Citire partituri", "Poziția mâinii", "Melodii simple"],
+        pro: ["Teorie muzicală avansată", "Improvizație", "Piese clasice & moderne"],
+        intensiv: ["Compoziție muzicală", "Recital solo", "Tehnică avansată"]
+      }
+    },
+    art: {
+      label: 'Pictură',
+      icon: <Palette size={18} />,
+      themeColor: 'yellow',
+      prices: { standard: '200', pro: '380', intensiv: '700' },
+      features: {
+        standard: ["Desen în creion", "Teoria culorilor", "Natură statică"],
+        pro: ["Acuarelă & Acrilic", "Studiul anatomiei", "Peisagistică"],
+        intensiv: ["Pictură pe pânză", "Expoziție personală", "Tehnici mixte"]
+      }
+    }
+  };
+
+  const currentConfig = pricingConfig[activeCategory];
+
+  // Generarea dinamică a planurilor pe baza categoriei selectate
   const plans = [
     {
       name: "Standard",
-      price: "250",
-      features: ["1 Ședință / Săptămână", "Durată: 50 minute", "Materiale suport incluse", "Acces la evenimente periodice"],
-      color: "border-blue-200",
-      btnColor: "bg-blue-500",
-      textColor: "text-blue-500",
-      tabBg: "bg-blue-50"
+      price: currentConfig.prices.standard,
+      features: ["1 Ședință / Săptămână", "Durată: 50 minute", ...currentConfig.features.standard],
+      color: activeCategory === 'piano' ? "border-blue-200" : activeCategory === 'art' ? "border-yellow-200" : "border-pink-200",
+      bgHeader: activeCategory === 'piano' ? "bg-blue-50" : activeCategory === 'art' ? "bg-yellow-50" : "bg-pink-50",
+      btnColor: activeCategory === 'piano' ? "bg-blue-500" : activeCategory === 'art' ? "bg-yellow-500 text-black" : "bg-pink-500",
+      textColor: activeCategory === 'piano' ? "text-blue-500" : activeCategory === 'art' ? "text-yellow-600" : "text-pink-500",
     },
     {
       name: "Pro",
-      price: "450",
-      features: ["2 Ședințe / Săptămână", "Durată: 50 minute", "Plan de studiu personalizat", "Acces la workshop-uri gratuite", "Asistență online"],
+      price: currentConfig.prices.pro,
+      features: ["2 Ședințe / Săptămână", "Durată: 50 minute", "Plan personalizat", ...currentConfig.features.pro],
       popular: true,
-      color: "border-purple-400 shadow-purple-100",
-      btnColor: "bg-purple-600",
-      textColor: "text-purple-600",
-      tabBg: "bg-purple-50"
+      color: activeCategory === 'piano' ? "border-blue-400 shadow-blue-100" : activeCategory === 'art' ? "border-yellow-400 shadow-yellow-100" : "border-purple-400 shadow-purple-100",
+      bgHeader: activeCategory === 'piano' ? "bg-blue-100" : activeCategory === 'art' ? "bg-yellow-100" : "bg-purple-100",
+      btnColor: activeCategory === 'piano' ? "bg-blue-600" : activeCategory === 'art' ? "bg-yellow-400 text-black" : "bg-purple-600",
+      textColor: activeCategory === 'piano' ? "text-blue-600" : activeCategory === 'art' ? "text-yellow-700" : "text-purple-600",
     },
     {
       name: "Intensiv",
-      price: "800",
-      features: ["3 Ședințe / Săptămână", "Toate disciplinele incluse", "Înregistrări audio/video profesionale", "Diplomă de participare"],
-      color: "border-pink-200",
-      btnColor: "bg-pink-500",
-      textColor: "text-pink-500",
-      tabBg: "bg-pink-50"
+      price: currentConfig.prices.intensiv,
+      features: ["3 Ședințe / Săptămână", "Toate materialele incluse", "Diplomă absolvire", ...currentConfig.features.intensiv],
+      color: activeCategory === 'piano' ? "border-indigo-200" : activeCategory === 'art' ? "border-orange-200" : "border-indigo-200",
+      bgHeader: activeCategory === 'piano' ? "bg-indigo-50" : activeCategory === 'art' ? "bg-orange-50" : "bg-indigo-50",
+      btnColor: activeCategory === 'piano' ? "bg-indigo-500" : activeCategory === 'art' ? "bg-orange-500" : "bg-indigo-500",
+      textColor: activeCategory === 'piano' ? "text-indigo-500" : activeCategory === 'art' ? "text-orange-600" : "text-indigo-500",
     }
   ];
 
@@ -40,68 +84,77 @@ const Pricing: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 py-8 md:py-12">
       <SectionHeader 
         title="Tarife Cursuri" 
-        description="Investește în talentul copilului tău cu pachete flexibile și avantajoase."
+        description="Alege disciplina dorită și vezi pachetul care ți se potrivește cel mai bine."
       />
 
-      {/* Mobile: Tabs Layout to save space */}
-      <div className="md:hidden">
-        {/* Visual Hint for Tabs */}
-        <div className="flex justify-center mb-2 animate-bounce">
-           <span className="bg-yellow-400 text-indigo-900 text-xs font-black px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
-             <Hand size={12} className="rotate-180" /> Alege pachetul potrivit
-           </span>
-        </div>
-
-        <div className="flex bg-gray-100 p-1.5 rounded-2xl mb-6 shadow-inner border border-gray-200">
-          {plans.map((plan, i) => (
-            <button
-              key={i}
-              onClick={() => setActiveTab(i)}
-              className={`flex-1 py-3 rounded-xl text-sm font-black transition-all duration-300 relative overflow-hidden ${
-                activeTab === i 
-                ? 'bg-white shadow-md text-gray-900 scale-100' 
-                : 'text-gray-400 hover:text-gray-600 scale-95'
-              }`}
-            >
-              {activeTab === i && (
-                <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent"></div>
-              )}
-              {plan.name}
-            </button>
-          ))}
-        </div>
-
-        {/* Active Mobile Card */}
-        <div className={`bg-white rounded-[2rem] p-6 border-4 ${plans[activeTab].color} shadow-2xl relative overflow-hidden animate-fade-in`}>
-           {plans[activeTab].popular && (
-              <div className="absolute top-0 right-0 bg-purple-600 text-white text-[10px] font-black px-4 py-2 rounded-bl-xl uppercase tracking-widest z-20">
-                Recomandat
-              </div>
-            )}
-            <h3 className={`text-2xl font-black mb-2 ${plans[activeTab].textColor}`}>{plans[activeTab].name}</h3>
-            <div className="flex items-baseline gap-1 mb-6">
-              <span className="text-4xl font-black text-gray-900">{plans[activeTab].price}</span>
-              <span className="text-gray-500 font-bold text-sm">RON / lună</span>
-            </div>
+      {/* DISCIPLINE SELECTOR - TABS */}
+      <div className="flex justify-center mb-8 md:mb-16">
+        <div className="bg-white p-1.5 rounded-full shadow-lg border border-gray-100 inline-flex gap-1 md:gap-2 scale-90 md:scale-100 origin-top">
+          {(Object.keys(pricingConfig) as Array<'canto' | 'piano' | 'art'>).map((key) => {
+            const isActive = activeCategory === key;
+            const item = pricingConfig[key];
             
-            <ul className="space-y-3 mb-6">
-              {plans[activeTab].features.map((f, j) => (
-                <li key={j} className="flex items-start gap-3 text-sm text-gray-600 font-medium">
-                  <div className={`shrink-0 p-1 rounded-full ${plans[activeTab].btnColor} text-white mt-0.5`}>
-                    <Check size={10} />
-                  </div>
-                  {f}
-                </li>
-              ))}
-            </ul>
+            let activeStyle = "bg-gray-100 text-gray-500";
+            if (isActive) {
+               if (key === 'canto') activeStyle = "bg-pink-500 text-white shadow-md";
+               if (key === 'piano') activeStyle = "bg-blue-500 text-white shadow-md";
+               if (key === 'art') activeStyle = "bg-yellow-400 text-black shadow-md";
+            }
 
-            <button 
-              onClick={() => document.getElementById('enroll')?.scrollIntoView({ behavior: 'smooth' })}
-              className={`w-full py-3 rounded-xl font-black text-white shadow-lg ${plans[activeTab].btnColor}`}
-            >
-              Alege Planul
-            </button>
+            return (
+              <button
+                key={key}
+                onClick={() => setActiveCategory(key)}
+                onMouseEnter={playPop}
+                className={`px-4 py-2 md:px-8 md:py-3 rounded-full font-black text-xs md:text-base flex items-center gap-2 transition-all duration-300 ${activeStyle}`}
+              >
+                {item.icon}
+                {item.label}
+              </button>
+            );
+          })}
         </div>
+      </div>
+
+      {/* Mobile: Compact Layout */}
+      <div className="md:hidden flex flex-col gap-3">
+        {plans.map((plan, i) => (
+          <div key={i} className={`bg-white rounded-2xl border-2 ${plan.color} shadow-lg relative overflow-hidden animate-fade-in`}>
+             {/* Compact Header: Name + Price Inline */}
+             <div className={`flex justify-between items-center px-4 py-3 ${plan.bgHeader} border-b border-gray-100`}>
+                <div className="flex flex-col">
+                    <h3 className={`text-lg font-black leading-none ${plan.textColor}`}>{plan.name}</h3>
+                    {plan.popular && <span className="text-[10px] uppercase font-bold text-gray-500 mt-1">⭐ Recomandat</span>}
+                </div>
+                <div className="text-right">
+                    <span className="block text-2xl font-black text-gray-900 leading-none">{plan.price} <span className="text-xs text-gray-500 font-bold align-middle">RON</span></span>
+                </div>
+             </div>
+             
+             <div className="p-4 pt-3 flex flex-col gap-3">
+                {/* Dense Features List */}
+                <ul className="grid grid-cols-1 gap-1.5">
+                    {plan.features.map((f, j) => (
+                    <li key={j} className="flex items-start gap-2 text-xs text-gray-600 font-bold leading-tight">
+                        <div className={`shrink-0 p-0.5 rounded-full ${plan.btnColor} ${activeCategory === 'art' && plan.name !== 'Standard' ? 'text-black' : 'text-white'} mt-0.5`}>
+                        <Check size={8} />
+                        </div>
+                        {f}
+                    </li>
+                    ))}
+                </ul>
+
+                {/* Compact Button */}
+                <button 
+                    onClick={() => document.getElementById('enroll')?.scrollIntoView({ behavior: 'smooth' })}
+                    onMouseEnter={playPop}
+                    className={`w-full py-2.5 rounded-xl font-black text-sm ${activeCategory === 'art' ? 'text-gray-900' : 'text-white'} shadow-md active:scale-95 transition-transform ${plan.btnColor}`}
+                >
+                    Alege {plan.name}
+                </button>
+             </div>
+          </div>
+        ))}
       </div>
 
       {/* Desktop: Grid Layout */}
@@ -109,7 +162,7 @@ const Pricing: React.FC = () => {
         {plans.map((plan, i) => (
           <div key={i} className={`bg-white rounded-[2.5rem] p-8 md:p-10 border-4 ${plan.color} relative overflow-hidden transition-transform md:hover:scale-105 shadow-2xl flex flex-col`}>
             {plan.popular && (
-              <div className="absolute top-0 right-0 bg-purple-600 text-white text-[10px] font-black px-4 py-2 rounded-bl-xl uppercase tracking-widest z-20">
+              <div className={`absolute top-0 right-0 ${activeCategory === 'piano' ? 'bg-blue-600' : activeCategory === 'art' ? 'bg-yellow-500 text-black' : 'bg-purple-600'} text-white text-[10px] font-black px-4 py-2 rounded-bl-xl uppercase tracking-widest z-20`}>
                 Recomandat
               </div>
             )}
@@ -122,7 +175,7 @@ const Pricing: React.FC = () => {
             <ul className="space-y-4 mb-8 md:mb-10 flex-grow">
               {plan.features.map((f, j) => (
                 <li key={j} className="flex items-center gap-3 text-sm md:text-base text-gray-600 font-medium">
-                  <div className={`shrink-0 p-1 rounded-full ${plan.btnColor} text-white`}>
+                  <div className={`shrink-0 p-1 rounded-full ${plan.btnColor} ${activeCategory === 'art' && plan.name !== 'Standard' ? 'text-black' : 'text-white'}`}>
                     <Check size={12} />
                   </div>
                   {f}
@@ -132,7 +185,8 @@ const Pricing: React.FC = () => {
 
             <button 
               onClick={() => document.getElementById('enroll')?.scrollIntoView({ behavior: 'smooth' })}
-              className={`w-full py-4 rounded-2xl font-black text-white shadow-lg transition-transform active:scale-95 ${plan.btnColor} mt-auto`}
+              onMouseEnter={playPop}
+              className={`w-full py-4 rounded-2xl font-black ${activeCategory === 'art' ? 'text-gray-900' : 'text-white'} shadow-lg transition-transform active:scale-95 ${plan.btnColor} mt-auto`}
             >
               Alege Planul
             </button>

@@ -21,6 +21,7 @@ const App: React.FC = () => {
   const [isMagicMode, setIsMagicMode] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [currentView, setCurrentView] = useState('home'); // 'home', 'canto', 'piano', 'painting', 'gallery-photo', 'gallery-video'
+  const [savedScrollPosition, setSavedScrollPosition] = useState(0);
 
   // Audio Feedback Logic
   const playPop = useCallback(() => {
@@ -48,6 +49,23 @@ const App: React.FC = () => {
       document.body.classList.remove('magic-mode');
     }
   }, [isMagicMode]);
+
+  // Restore scroll position when returning to home
+  useEffect(() => {
+    if (currentView === 'home' && savedScrollPosition > 0) {
+      // Small timeout to ensure DOM is rendered before scrolling
+      const timer = setTimeout(() => {
+        window.scrollTo({
+          top: savedScrollPosition,
+          behavior: 'auto' // Instant jump allows for better UX in restoration
+        });
+      }, 50);
+      return () => clearTimeout(timer);
+    } else if (currentView !== 'home') {
+      // When entering a detail view, we usually want to start at the top
+      window.scrollTo(0, 0);
+    }
+  }, [currentView, savedScrollPosition]);
 
   useEffect(() => {
     if (currentView !== 'home') return;
@@ -81,7 +99,18 @@ const App: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [currentView]);
 
+  // Navigation Handlers
+  const handleNavigateToView = (view: string) => {
+    setSavedScrollPosition(window.scrollY);
+    setCurrentView(view);
+  };
+
+  const handleBackToHome = () => {
+    setCurrentView('home');
+  };
+
   const handleEnrollFromDetail = () => {
+    setSavedScrollPosition(0); // Reset saved position so we don't jump to it
     setCurrentView('home');
     setTimeout(() => {
       document.getElementById('enroll')?.scrollIntoView({ behavior: 'smooth' });
@@ -97,14 +126,14 @@ const App: React.FC = () => {
         return (
           <CourseDetail 
             courseId={currentView} 
-            onBack={() => setCurrentView('home')} 
+            onBack={handleBackToHome} 
             onEnroll={handleEnrollFromDetail} 
           />
         );
       case 'gallery-photo':
-        return <FullPhotoGallery onBack={() => setCurrentView('home')} />;
+        return <FullPhotoGallery onBack={handleBackToHome} />;
       case 'gallery-video':
-        return <FullVideoGallery onBack={() => setCurrentView('home')} />;
+        return <FullVideoGallery onBack={handleBackToHome} />;
       case 'home':
       default:
         return (
@@ -122,7 +151,7 @@ const App: React.FC = () => {
             <SectionSeparator type="paint" />
 
             <section id="courses" className="py-2 reveal-on-scroll opacity-0">
-              <Courses playPop={playPop} onViewDetails={setCurrentView} />
+              <Courses playPop={playPop} onViewDetails={handleNavigateToView} />
             </section>
 
             <SectionSeparator type="notes" />
@@ -134,7 +163,7 @@ const App: React.FC = () => {
             <SectionSeparator type="paint" />
 
             <section id="gallery" className="py-2 reveal-on-scroll opacity-0">
-              <Gallery onViewAll={(type) => setCurrentView(type === 'photo' ? 'gallery-photo' : 'gallery-video')} />
+              <Gallery onViewAll={(type) => handleNavigateToView(type === 'photo' ? 'gallery-photo' : 'gallery-video')} />
             </section>
 
             <SectionSeparator type="notes" />

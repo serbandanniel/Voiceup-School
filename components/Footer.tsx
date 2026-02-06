@@ -12,7 +12,7 @@ const Footer: React.FC = () => {
             {/* Transparent background for logo */}
             <div className="w-16 h-16 p-2 flex items-center justify-center">
                <img 
-                 src="https://i.postimg.cc/1tWHG5Z8/voiceup-school-final.png" 
+                 src="https://voiceup-festival.ro/voiceup_school_final.png" 
                  alt="Footer Logo" 
                  className="w-full h-full object-contain"
                />

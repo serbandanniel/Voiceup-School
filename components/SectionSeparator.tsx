@@ -319,7 +319,11 @@ const SectionSeparator: React.FC<SeparatorProps> = ({ type }) => {
     ctx.moveTo(lastPos.current.x, lastPos.current.y);
     ctx.lineTo(currentX, currentY);
     ctx.strokeStyle = `hsl(${hueRef.current}, 75%, 60%)`;
-    ctx.lineWidth = 20; 
+    
+    // Adjust line width based on screen size: smaller for mobile
+    const isMobile = window.innerWidth < 768;
+    ctx.lineWidth = isMobile ? 8 : 20;
+    
     ctx.lineCap = 'round'; 
     ctx.lineJoin = 'round';
     ctx.shadowBlur = 2;

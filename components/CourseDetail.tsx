@@ -92,19 +92,28 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ courseId, onBack, onEnroll 
                     : data.color === 'blue' ? 'bg-blue-600 hover:bg-blue-700'
                     : 'bg-yellow-500 hover:bg-yellow-600 text-black';
 
+  // Styles for the Back Button (Visible & Themed)
+  const backBtnClass = data.color === 'pink' 
+      ? "bg-white text-pink-600 border-2 border-pink-200 hover:border-pink-300 hover:bg-pink-50 shadow-lg shadow-pink-100/50"
+      : data.color === 'blue' 
+        ? "bg-white text-blue-600 border-2 border-blue-200 hover:border-blue-300 hover:bg-blue-50 shadow-lg shadow-blue-100/50"
+        : "bg-white text-yellow-700 border-2 border-yellow-300 hover:border-yellow-400 hover:bg-yellow-50 shadow-lg shadow-yellow-100/50";
+
   return (
     // Updated padding-top: pt-32 on mobile, pt-28 on desktop to avoid header overlap
     <div className={`min-h-screen bg-gradient-to-b ${bgGradient} pt-32 md:pt-28 pb-12 animate-fade-in`}>
       <div className="max-w-5xl mx-auto px-4">
         
-        {/* Navigation */}
-        <button 
-          onClick={onBack}
-          className="group flex items-center gap-2 mb-8 px-5 py-2.5 bg-white rounded-full shadow-md hover:shadow-lg transition-all text-gray-600 font-bold"
-        >
-          <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-          Înapoi la Cursuri
-        </button>
+        {/* Navigation - Top (Centered on Mobile & Desktop for better focus) */}
+        <div className="flex justify-center mb-8">
+          <button 
+            onClick={onBack}
+            className={`group flex items-center gap-2 px-6 py-3 rounded-full font-black uppercase tracking-wide transition-all active:scale-95 ${backBtnClass}`}
+          >
+            <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+            Înapoi la Cursuri
+          </button>
+        </div>
 
         {/* Hero Section */}
         <div className="relative rounded-[3rem] overflow-hidden shadow-2xl mb-12 border-8 border-white group">
@@ -202,6 +211,17 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ courseId, onBack, onEnroll 
             </div>
           </div>
 
+        </div>
+
+        {/* Navigation - Bottom (Centered, Visible) */}
+        <div className="flex justify-center mt-12 pt-8 border-t border-white/50">
+          <button 
+            onClick={onBack}
+            className={`group flex items-center gap-2 px-8 py-4 rounded-full font-black uppercase tracking-wide transition-all active:scale-95 ${backBtnClass}`}
+          >
+            <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+            Înapoi la Cursuri
+          </button>
         </div>
 
       </div>

@@ -17,17 +17,23 @@ const FullPhotoGallery: React.FC<FullPhotoGalleryProps> = ({ onBack }) => {
     caption: `Moment Artistic ${i + 1}`
   }));
 
+  // Style similar to CourseDetail but generic purple theme
+  const backBtnClass = "bg-white text-purple-600 border-2 border-purple-200 hover:border-purple-300 hover:bg-purple-50 shadow-lg shadow-purple-100/50";
+
   return (
     <div className="min-h-screen pt-32 md:pt-28 pb-12 animate-fade-in">
       <div className="max-w-7xl mx-auto px-4">
         
-        <button 
-          onClick={onBack}
-          className="group flex items-center gap-2 mb-8 px-5 py-2.5 bg-white rounded-full shadow-md hover:shadow-lg transition-all text-gray-600 font-bold"
-        >
-          <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-          Înapoi acasă
-        </button>
+        {/* Top Button - Centered */}
+        <div className="flex justify-center mb-8">
+            <button 
+            onClick={onBack}
+            className={`group flex items-center gap-2 px-6 py-3 rounded-full font-black uppercase tracking-wide transition-all active:scale-95 ${backBtnClass}`}
+            >
+            <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+            Înapoi acasă
+            </button>
+        </div>
 
         <SectionHeader 
           title="Galeria Foto Completă" 
@@ -56,7 +62,18 @@ const FullPhotoGallery: React.FC<FullPhotoGalleryProps> = ({ onBack }) => {
         </div>
 
         <div className="mt-16 text-center">
-           <p className="text-gray-500 font-medium">Amintiri care durează o viață.</p>
+           <p className="text-gray-500 font-medium mb-8">Amintiri care durează o viață.</p>
+           
+           {/* Bottom Button - Centered */}
+           <div className="flex justify-center border-t border-purple-100 pt-8">
+                <button 
+                onClick={onBack}
+                className={`group flex items-center gap-2 px-8 py-4 rounded-full font-black uppercase tracking-wide transition-all active:scale-95 ${backBtnClass}`}
+                >
+                <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+                Înapoi acasă
+                </button>
+           </div>
         </div>
       </div>
     </div>

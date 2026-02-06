@@ -21,7 +21,7 @@ const Hero: React.FC<HeroProps> = ({ playPop }) => {
         <div className="block lg:hidden w-full max-w-[280px] mx-auto relative mb-6">
              <div className="relative rounded-[2rem] overflow-hidden border-[6px] border-white shadow-xl transform rotate-2 bg-white/20 backdrop-blur-sm flex items-center justify-center aspect-square">
                 <img 
-                  src="https://i.postimg.cc/1tWHG5Z8/voiceup-school-final.png" 
+                  src="https://voiceup-festival.ro/voiceup_school_final.png" 
                   alt="VoiceUp Logo Main" 
                   className="w-full h-full object-contain p-4"
                 />
@@ -76,7 +76,7 @@ const Hero: React.FC<HeroProps> = ({ playPop }) => {
           <div className="relative z-10 w-full max-w-[550px]">
              <div className="relative rounded-[3rem] overflow-hidden border-[8px] border-white shadow-2xl transform rotate-2 group-hover:rotate-0 transition-transform duration-700 bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-purple-500/20 aspect-square">
                 <img 
-                  src="https://i.postimg.cc/1tWHG5Z8/voiceup-school-final.png" 
+                  src="https://voiceup-festival.ro/voiceup_school_final.png" 
                   alt="VoiceUp Logo Main" 
                   className="w-full h-full object-contain p-4"
                 />

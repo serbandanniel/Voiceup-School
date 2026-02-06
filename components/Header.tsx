@@ -41,7 +41,7 @@ const Header: React.FC<HeaderProps> = ({
   const Logo = () => (
     <div className="p-2 hover:scale-105 transition-transform duration-300 cursor-pointer">
       <img 
-        src="https://i.postimg.cc/1tWHG5Z8/voiceup-school-final.png" 
+        src="https://voiceup-festival.ro/voiceup_school_final.png" 
         alt="VoiceUp Logo" 
         className="h-12 md:h-16 w-auto object-contain" 
       />
