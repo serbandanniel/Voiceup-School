@@ -8,10 +8,11 @@ const EnrollmentForm: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCourse || !selectedPlan) {
-      alert("Te rugăm să alegi un curs și un tip de abonament!");
+    if (!selectedCourse) {
+      alert("Te rugăm să alegi un curs!");
       return;
     }
+    // Daca nu a ales plan, consideram Evaluare Gratuita
     setStatus('loading');
     setTimeout(() => setStatus('success'), 1500);
   };
@@ -23,9 +24,9 @@ const EnrollmentForm: React.FC = () => {
   ];
 
   const plans = [
+    { id: 'Evaluare', price: 'GRATUIT', sessions: 'Ședință de cunoaștere (30 min)', recommended: true },
     { id: 'Standard', price: '250 Lei', sessions: '1 ședință / săptămână' },
-    { id: 'Pro', price: '450 Lei', sessions: '2 ședințe / săptămână', recommended: true },
-    { id: 'Intensiv', price: '800 Lei', sessions: '3 ședințe / săptămână' }
+    { id: 'Pro', price: '450 Lei', sessions: '2 ședințe / săptămână' },
   ];
 
   const currentPlanDetails = plans.find(p => p.id === selectedPlan);
@@ -37,9 +38,9 @@ const EnrollmentForm: React.FC = () => {
         {/* Compact Header */}
         <div className="bg-gradient-to-r from-gray-900 to-indigo-900 p-8 text-center text-white relative overflow-hidden">
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-center gap-4">
-            <h2 className="text-2xl md:text-3xl font-black tracking-tight">Înscrie-te la Curs</h2>
+            <h2 className="text-2xl md:text-3xl font-black tracking-tight">Rezervă un loc</h2>
             <div className="hidden md:block w-1.5 h-1.5 rounded-full bg-white/30"></div>
-            <p className="text-blue-100 text-sm md:text-base font-medium">Începe aventura artistică!</p>
+            <p className="text-blue-100 text-sm md:text-base font-medium">Primul pas spre scenă începe aici.</p>
           </div>
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-purple-500 via-transparent to-transparent"></div>
         </div>
@@ -122,21 +123,15 @@ const EnrollmentForm: React.FC = () => {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <Trophy size={18} className="text-yellow-500" />
-                    <h3 className="text-lg font-black text-gray-800">Abonament</h3>
+                    <h3 className="text-lg font-black text-gray-800">Tip Rezervare</h3>
                   </div>
-                  {selectedPlan && (
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-purple-600 bg-purple-50 px-3 py-1 rounded-full animate-fade-in">
-                      <CalendarClock size={12} />
-                      {currentPlanDetails?.sessions}
-                    </div>
-                  )}
                 </div>
 
                 {/* Updated Layout: Vertical Stack with Horizontal Item Content */}
                 <div className="flex flex-col gap-3">
                   {plans.map((plan) => {
                     const isSelected = selectedPlan === plan.id;
-                    const isPro = plan.id === 'Pro';
+                    const isEvaluare = plan.id === 'Evaluare';
                     return (
                       <button
                         key={plan.id}
@@ -147,20 +142,21 @@ const EnrollmentForm: React.FC = () => {
                             ? 'bg-gray-900 border-gray-900 text-white shadow-lg scale-[1.02] z-10' 
                             : 'bg-white border-gray-100 text-gray-600 hover:border-purple-200 hover:bg-gray-50'
                           } 
-                          ${isPro && !isSelected ? 'border-purple-200 shadow-purple-100' : ''}
+                          ${isEvaluare && !isSelected ? 'border-green-200 shadow-green-100 bg-green-50/50' : ''}
                         `}
                       >
-                        {isPro && !isSelected && (
-                          <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[10px] font-black px-3 py-0.5 rounded-full shadow-sm uppercase tracking-wider">
-                            Recomandat
+                        {isEvaluare && !isSelected && (
+                          <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-green-500 text-white text-[10px] font-black px-3 py-0.5 rounded-full shadow-sm uppercase tracking-wider">
+                            Recomandat pentru început
                           </div>
                         )}
                         
-                        {/* Name on Left */}
-                        <span className="text-base font-black tracking-tight">{plan.id}</span>
+                        <div className="flex flex-col text-left">
+                            <span className="text-base font-black tracking-tight">{plan.id}</span>
+                            <span className={`text-[10px] font-bold ${isSelected ? 'text-gray-300' : 'text-gray-400'}`}>{plan.sessions}</span>
+                        </div>
                         
-                        {/* Price on Right - BIGGER */}
-                        <span className={`text-xl font-black ${isSelected ? 'text-white' : 'text-purple-600'}`}>{plan.price}</span>
+                        <span className={`text-lg font-black ${isSelected ? 'text-white' : 'text-purple-600'}`}>{plan.price}</span>
                       </button>
                     );
                   })}
@@ -173,7 +169,7 @@ const EnrollmentForm: React.FC = () => {
                 className="w-full py-4 mt-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-2xl font-black text-lg shadow-xl shadow-purple-500/20 active:scale-[0.98] transition-all disabled:opacity-70 group relative overflow-hidden"
               >
                  <span className="relative z-10 flex items-center justify-center gap-2">
-                   {status === 'loading' ? 'Se procesează...' : status === 'success' ? 'Trimis! 🎉' : 'Finalizează Înscrierea'}
+                   {status === 'loading' ? 'Se procesează...' : status === 'success' ? 'Trimis! 🎉' : 'Trimite Solicitarea'}
                    {status !== 'loading' && status !== 'success' && <Sparkles size={18} className="text-yellow-300 animate-pulse" />}
                  </span>
                  <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>

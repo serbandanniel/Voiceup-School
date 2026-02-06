@@ -1,5 +1,5 @@
 import React from 'react';
-import { PlayCircle, Music, Sparkles } from 'lucide-react';
+import { PlayCircle, Music, Sparkles, CalendarCheck } from 'lucide-react';
 
 interface HeroProps {
   playPop: () => void;
@@ -45,7 +45,7 @@ const Hero: React.FC<HeroProps> = ({ playPop }) => {
           </h1>
           
           <p className="text-lg md:text-2xl opacity-90 max-w-xl mx-auto lg:mx-0 font-bold leading-relaxed px-2 md:px-0">
-            VoiceUp School este locul unde talentul nu are reguli. Fie că iubești microfonul, clapele sau culorile, aici găsești mentorii care te ajută să te exprimi liber.
+            VoiceUp School este locul unde talentul nu are reguli. Mentorat personalizat pentru copii între 4 și 18 ani.
           </p>
 
           {/* Added extra bottom margin (mb-12) on mobile to clear the piano hint */}
@@ -55,7 +55,10 @@ const Hero: React.FC<HeroProps> = ({ playPop }) => {
               onClick={() => document.getElementById('enroll')?.scrollIntoView({ behavior: 'smooth' })}
               className="w-full sm:w-auto group relative px-8 py-4 md:px-10 md:py-5 bg-purple-600 text-white rounded-[1.5rem] md:rounded-[2rem] font-black text-lg md:text-xl shadow-2xl hover:scale-105 transition-all active:scale-95 overflow-hidden"
             >
-              <span className="relative z-10 uppercase">Hai să ne cunoaștem!</span>
+              <span className="relative z-10 uppercase flex items-center justify-center gap-2">
+                <CalendarCheck size={24} />
+                Evaluare Gratuită
+              </span>
               <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </button>
             <button 

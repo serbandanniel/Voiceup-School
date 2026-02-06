@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Sun, Moon, Volume2, VolumeX, Sparkles, Phone, MessageCircle } from 'lucide-react';
+import { Menu, X, Sun, Moon, Volume2, VolumeX, Sparkles, Phone, MessageCircle, ArrowRight } from 'lucide-react';
 
 interface HeaderProps {
   activeSection: string;
@@ -38,12 +38,12 @@ const Header: React.FC<HeaderProps> = ({
     playPop();
   };
 
-  const Logo = () => (
+  const Logo = ({ large = false }) => (
     <div className="p-2 hover:scale-105 transition-transform duration-300 cursor-pointer">
       <img 
         src="https://voiceup-festival.ro/voiceup_school_final.png" 
         alt="VoiceUp Logo" 
-        className="h-12 md:h-16 w-auto object-contain" 
+        className={`${large ? 'h-20 md:h-24' : 'h-12 md:h-16'} w-auto object-contain`} 
       />
     </div>
   );
@@ -107,9 +107,9 @@ const Header: React.FC<HeaderProps> = ({
               <div className="absolute bottom-[10%] right-[-10%] w-[120%] h-[40%] bg-blue-500/10 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '2s' }}></div>
            </div>
 
-           {/* Top Bar */}
+           {/* Top Bar with LARGE LOGO */}
            <div className="flex items-center justify-between p-6 relative z-10">
-              <Logo />
+              <Logo large={true} />
               <button 
                 className={`p-4 rounded-2xl shadow-xl transition-all active:scale-75 ${isMagicMode ? 'bg-white/10 text-white' : 'bg-white text-gray-900 border border-purple-50'}`}
                 onClick={() => setIsOpen(false)}
@@ -120,7 +120,8 @@ const Header: React.FC<HeaderProps> = ({
 
            {/* Menu Grid */}
            <div className="flex-grow flex items-center justify-center px-6 relative z-10 overflow-y-auto">
-              <div className="grid grid-cols-2 gap-x-8 gap-y-10 w-full max-w-sm py-4">
+              {/* Reduced gaps and padding for compactness */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-8 w-full max-w-sm py-4">
                 {menuItems.map((item, idx) => {
                   const firstLetter = item.name.charAt(0);
                   const restOfName = item.name.slice(1);
@@ -132,40 +133,44 @@ const Header: React.FC<HeaderProps> = ({
                       onClick={() => scrollTo(item.id)}
                       className="relative flex flex-col items-center justify-center group touch-manipulation hover-rubber"
                     >
-                      {/* Removed opacity-0 default and fixed colors for visibility */}
                       <div className="flex items-center justify-center relative z-10">
-                        <span className={`text-6xl font-[900] leading-none ${item.color} ${isMagicMode ? 'text-glow' : 'drop-shadow-sm'}`}>
+                        {/* Font size reduced: text-6xl -> text-4xl/5xl */}
+                        <span className={`text-4xl md:text-5xl font-[900] leading-none ${item.color} ${isMagicMode ? 'text-glow' : 'drop-shadow-sm'}`}>
                           {firstLetter}
                         </span>
                         
-                        <span className={`text-2xl font-[900] ml-1 tracking-tight ${isActive ? 'text-purple-600' : isMagicMode ? 'text-white' : 'text-gray-800'}`}>
+                        {/* Font size reduced: text-2xl -> text-lg */}
+                        <span className={`text-lg md:text-xl font-[900] ml-0.5 tracking-tight ${isActive ? 'text-purple-600' : isMagicMode ? 'text-white' : 'text-gray-800'}`}>
                           {restOfName}
                         </span>
                         
                         {isActive && (
-                          <div className="absolute -top-4 -right-3 text-yellow-400 animate-bounce">
-                            <Sparkles size={16} />
+                          <div className="absolute -top-3 -right-2 text-yellow-400 animate-bounce">
+                            <Sparkles size={14} />
                           </div>
                         )}
                       </div>
                       
-                      <div className={`h-2 rounded-full mt-2 transition-all duration-500 ${isActive ? `w-12 ${item.color.replace('text', 'bg')}` : 'w-0 opacity-0'}`}></div>
+                      <div className={`h-1.5 rounded-full mt-1.5 transition-all duration-500 ${isActive ? `w-8 ${item.color.replace('text', 'bg')}` : 'w-0 opacity-0'}`}></div>
                     </button>
                   );
                 })}
               </div>
            </div>
 
-           {/* Functional Footer Buttons */}
-           <div className="p-6 relative z-10 mt-auto bg-gradient-to-t from-white via-white to-transparent dark:from-black dark:via-black">
-              <div className="flex gap-4 justify-center">
-                 <a href="tel:0712345678" className="flex-1 flex items-center justify-center gap-2 py-4 bg-green-500 text-white rounded-2xl shadow-lg font-black text-lg active:scale-95 transition-transform">
-                    <Phone size={24} />
-                    Suna
+           {/* Footer Buttons - Single Row Layout */}
+           <div className="p-6 relative z-10 mt-auto pb-8">
+              <div className="flex items-center gap-3">
+                 {/* WhatsApp Button */}
+                 <a href="https://wa.me/40712345678" className="flex-1 py-3 bg-[#25D366] text-white rounded-2xl shadow-lg shadow-green-200 font-black text-sm md:text-base active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                    <MessageCircle size={20} fill="white" />
+                    <span>WhatsApp</span>
                  </a>
-                 <a href="https://wa.me/40712345678" className="flex-1 flex items-center justify-center gap-2 py-4 bg-[#25D366] text-white rounded-2xl shadow-lg font-black text-lg active:scale-95 transition-transform">
-                    <MessageCircle size={24} />
-                    WhatsApp
+                 
+                 {/* Call Button */}
+                 <a href="tel:0712345678" className={`flex-1 py-3 rounded-2xl font-black text-sm md:text-base active:scale-[0.98] transition-all flex items-center justify-center gap-2 border-2 ${isMagicMode ? 'bg-white/10 text-white border-white/20' : 'bg-white text-gray-800 border-gray-100 shadow-md'}`}>
+                    <Phone size={20} className="text-blue-500" />
+                    <span>Sună-ne</span>
                  </a>
               </div>
            </div>

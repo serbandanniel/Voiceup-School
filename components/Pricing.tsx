@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import SectionHeader from './SectionHeader';
-import { Check, Hand, Mic2, Music, Palette } from 'lucide-react';
+import { Check, Hand, Mic2, Music, Palette, Clock, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface PricingProps {
   playPop: () => void;
@@ -8,12 +8,13 @@ interface PricingProps {
 
 const Pricing: React.FC<PricingProps> = ({ playPop }) => {
   const [activeCategory, setActiveCategory] = useState<'canto' | 'piano' | 'art'>('canto');
+  const [showLogistics, setShowLogistics] = useState(false);
 
   // Configurația prețurilor și a temelor pentru fiecare disciplină
   const pricingConfig = {
     canto: {
       label: 'Canto',
-      icon: <Mic2 size={18} />,
+      icon: <Mic2 size={24} />,
       themeColor: 'purple', // Folosim purple ca bază, dar accente pink
       prices: { standard: '250', pro: '450', intensiv: '800' },
       features: {
@@ -24,7 +25,7 @@ const Pricing: React.FC<PricingProps> = ({ playPop }) => {
     },
     piano: {
       label: 'Pian',
-      icon: <Music size={18} />,
+      icon: <Music size={24} />,
       themeColor: 'blue',
       prices: { standard: '280', pro: '500', intensiv: '900' },
       features: {
@@ -35,7 +36,7 @@ const Pricing: React.FC<PricingProps> = ({ playPop }) => {
     },
     art: {
       label: 'Pictură',
-      icon: <Palette size={18} />,
+      icon: <Palette size={24} />,
       themeColor: 'yellow',
       prices: { standard: '200', pro: '380', intensiv: '700' },
       features: {
@@ -83,22 +84,22 @@ const Pricing: React.FC<PricingProps> = ({ playPop }) => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 md:py-12">
       <SectionHeader 
-        title="Tarife Cursuri" 
-        description="Alege disciplina dorită și vezi pachetul care ți se potrivește cel mai bine."
+        title="Investiție în Viitor" 
+        description="Alege pachetul potrivit. Fără costuri ascunse."
       />
 
-      {/* DISCIPLINE SELECTOR - TABS */}
-      <div className="flex justify-center mb-8 md:mb-16">
-        <div className="bg-white p-1.5 rounded-full shadow-lg border border-gray-100 inline-flex gap-1 md:gap-2 scale-90 md:scale-100 origin-top">
+      {/* DISCIPLINE SELECTOR - TABS (UPDATED: Bigger, Bolder) */}
+      <div className="flex justify-center mb-10 md:mb-16">
+        <div className="bg-white p-2 rounded-2xl shadow-xl border-2 border-gray-100 inline-flex flex-wrap justify-center gap-2 md:gap-3 w-full md:w-auto">
           {(Object.keys(pricingConfig) as Array<'canto' | 'piano' | 'art'>).map((key) => {
             const isActive = activeCategory === key;
             const item = pricingConfig[key];
             
-            let activeStyle = "bg-gray-100 text-gray-500";
+            let activeStyle = "bg-gray-50 text-gray-400 hover:bg-gray-100";
             if (isActive) {
-               if (key === 'canto') activeStyle = "bg-pink-500 text-white shadow-md";
-               if (key === 'piano') activeStyle = "bg-blue-500 text-white shadow-md";
-               if (key === 'art') activeStyle = "bg-yellow-400 text-black shadow-md";
+               if (key === 'canto') activeStyle = "bg-pink-500 text-white shadow-lg shadow-pink-200 scale-105";
+               if (key === 'piano') activeStyle = "bg-blue-500 text-white shadow-lg shadow-blue-200 scale-105";
+               if (key === 'art') activeStyle = "bg-yellow-400 text-gray-900 shadow-lg shadow-yellow-200 scale-105";
             }
 
             return (
@@ -106,7 +107,7 @@ const Pricing: React.FC<PricingProps> = ({ playPop }) => {
                 key={key}
                 onClick={() => setActiveCategory(key)}
                 onMouseEnter={playPop}
-                className={`px-4 py-2 md:px-8 md:py-3 rounded-full font-black text-xs md:text-base flex items-center gap-2 transition-all duration-300 ${activeStyle}`}
+                className={`flex-1 md:flex-none px-6 py-3 md:px-10 md:py-4 rounded-xl font-black text-sm md:text-lg flex items-center justify-center gap-2 md:gap-3 transition-all duration-300 ${activeStyle}`}
               >
                 {item.icon}
                 {item.label}
@@ -117,27 +118,27 @@ const Pricing: React.FC<PricingProps> = ({ playPop }) => {
       </div>
 
       {/* Mobile: Compact Layout */}
-      <div className="md:hidden flex flex-col gap-3">
+      <div className="md:hidden flex flex-col gap-4">
         {plans.map((plan, i) => (
-          <div key={i} className={`bg-white rounded-2xl border-2 ${plan.color} shadow-lg relative overflow-hidden animate-fade-in`}>
+          <div key={i} className={`bg-white rounded-3xl border-2 ${plan.color} shadow-lg relative overflow-hidden animate-fade-in`}>
              {/* Compact Header: Name + Price Inline */}
-             <div className={`flex justify-between items-center px-4 py-3 ${plan.bgHeader} border-b border-gray-100`}>
+             <div className={`flex justify-between items-center px-5 py-4 ${plan.bgHeader} border-b border-gray-100`}>
                 <div className="flex flex-col">
-                    <h3 className={`text-lg font-black leading-none ${plan.textColor}`}>{plan.name}</h3>
+                    <h3 className={`text-xl font-black leading-none ${plan.textColor}`}>{plan.name}</h3>
                     {plan.popular && <span className="text-[10px] uppercase font-bold text-gray-500 mt-1">⭐ Recomandat</span>}
                 </div>
                 <div className="text-right">
-                    <span className="block text-2xl font-black text-gray-900 leading-none">{plan.price} <span className="text-xs text-gray-500 font-bold align-middle">RON</span></span>
+                    <span className="block text-3xl font-black text-gray-900 leading-none">{plan.price} <span className="text-sm text-gray-500 font-bold align-middle">RON</span></span>
                 </div>
              </div>
              
-             <div className="p-4 pt-3 flex flex-col gap-3">
+             <div className="p-5 flex flex-col gap-4">
                 {/* Dense Features List */}
-                <ul className="grid grid-cols-1 gap-1.5">
+                <ul className="grid grid-cols-1 gap-2">
                     {plan.features.map((f, j) => (
-                    <li key={j} className="flex items-start gap-2 text-xs text-gray-600 font-bold leading-tight">
+                    <li key={j} className="flex items-start gap-3 text-sm text-gray-600 font-bold leading-tight">
                         <div className={`shrink-0 p-0.5 rounded-full ${plan.btnColor} ${activeCategory === 'art' && plan.name !== 'Standard' ? 'text-black' : 'text-white'} mt-0.5`}>
-                        <Check size={8} />
+                        <Check size={10} />
                         </div>
                         {f}
                     </li>
@@ -148,7 +149,7 @@ const Pricing: React.FC<PricingProps> = ({ playPop }) => {
                 <button 
                     onClick={() => document.getElementById('enroll')?.scrollIntoView({ behavior: 'smooth' })}
                     onMouseEnter={playPop}
-                    className={`w-full py-2.5 rounded-xl font-black text-sm ${activeCategory === 'art' ? 'text-gray-900' : 'text-white'} shadow-md active:scale-95 transition-transform ${plan.btnColor}`}
+                    className={`w-full py-3.5 rounded-2xl font-black text-base ${activeCategory === 'art' ? 'text-gray-900' : 'text-white'} shadow-lg active:scale-95 transition-transform ${plan.btnColor}`}
                 >
                     Alege {plan.name}
                 </button>
@@ -158,7 +159,7 @@ const Pricing: React.FC<PricingProps> = ({ playPop }) => {
       </div>
 
       {/* Desktop: Grid Layout */}
-      <div className="hidden md:grid md:grid-cols-3 gap-6 items-stretch">
+      <div className="hidden md:grid md:grid-cols-3 gap-6 items-stretch mb-12">
         {plans.map((plan, i) => (
           <div key={i} className={`bg-white rounded-[2.5rem] p-8 md:p-10 border-4 ${plan.color} relative overflow-hidden transition-transform md:hover:scale-105 shadow-2xl flex flex-col`}>
             {plan.popular && (
@@ -192,6 +193,59 @@ const Pricing: React.FC<PricingProps> = ({ playPop }) => {
             </button>
           </div>
         ))}
+      </div>
+
+      {/* Logistics & Policies - Collapsible for Mobile */}
+      <div className="mt-8 md:mt-16 bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+        <button 
+          onClick={() => setShowLogistics(!showLogistics)}
+          className="w-full flex items-center justify-between p-6 md:p-8 bg-gray-50 hover:bg-gray-100 transition-colors"
+        >
+          <div className="flex items-center gap-3 text-left">
+            <div className="p-2 bg-purple-100 text-purple-600 rounded-lg">
+               <Clock size={24} />
+            </div>
+            <div>
+              <h3 className="text-lg md:text-xl font-black text-gray-800">Logistică și Întrebări Frecvente</h3>
+              <p className="text-sm text-gray-500 font-medium">Orar, absențe și detalii importante.</p>
+            </div>
+          </div>
+          {showLogistics ? <ChevronUp className="text-gray-400" /> : <ChevronDown className="text-gray-400" />}
+        </button>
+        
+        <div className={`transition-all duration-300 ease-in-out ${showLogistics ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
+          <div className="p-6 md:p-8 grid md:grid-cols-2 gap-8 border-t border-gray-100">
+            <div>
+               <h4 className="font-black text-gray-900 mb-4 flex items-center gap-2">
+                 <Clock size={18} className="text-blue-500" /> Program General
+               </h4>
+               <ul className="space-y-2 text-gray-600 text-sm font-medium">
+                 <li className="flex justify-between border-b border-gray-100 pb-2"><span>Luni - Vineri:</span> <span className="font-bold text-gray-900">10:00 - 20:00</span></li>
+                 <li className="flex justify-between border-b border-gray-100 pb-2"><span>Sâmbătă:</span> <span className="font-bold text-gray-900">09:00 - 16:00</span></li>
+                 <li className="text-xs text-gray-400 pt-1">*Lecțiile se programează individual sau în grupe mici.</li>
+               </ul>
+            </div>
+            <div>
+               <h4 className="font-black text-gray-900 mb-4 flex items-center gap-2">
+                 <AlertCircle size={18} className="text-red-500" /> Politici
+               </h4>
+               <ul className="space-y-3 text-gray-600 text-sm font-medium">
+                 <li className="flex gap-2">
+                   <div className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 shrink-0"></div>
+                   <span><strong>Absențe:</strong> O ședință poate fi reprogramată dacă suntem anunțați cu 24h înainte.</span>
+                 </li>
+                 <li className="flex gap-2">
+                   <div className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 shrink-0"></div>
+                   <span><strong>Recuperări:</strong> Ședințele anulate pe motiv medical se recuperează în limita disponibilității.</span>
+                 </li>
+                 <li className="flex gap-2">
+                   <div className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 shrink-0"></div>
+                   <span><strong>Plata:</strong> Abonamentele se achită la începutul lunii (1-5 ale lunii).</span>
+                 </li>
+               </ul>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
