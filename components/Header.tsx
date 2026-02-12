@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Menu, X, Sun, Moon, Volume2, VolumeX, Sparkles, Phone, MessageCircle, ArrowRight } from 'lucide-react';
+import { Menu, X, Sun, Moon, Volume2, VolumeX, Sparkles, Phone, MessageCircle, ChevronDown, Monitor } from 'lucide-react';
+
+type ThemeMode = 'light' | 'magic' | 'concert';
 
 interface HeaderProps {
   activeSection: string;
-  isMagicMode: boolean;
-  setIsMagicMode: (v: boolean) => void;
+  themeMode: ThemeMode;
+  setThemeMode: (mode: ThemeMode) => void;
   isMuted: boolean;
   setIsMuted: (v: boolean) => void;
   playPop: () => void;
@@ -12,13 +14,14 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ 
   activeSection, 
-  isMagicMode, 
-  setIsMagicMode, 
+  themeMode, 
+  setThemeMode, 
   isMuted, 
   setIsMuted,
   playPop
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showThemeMenu, setShowThemeMenu] = useState(false);
 
   const menuItems = [
     { name: 'Acasă', id: 'hero', color: 'text-pink-500', shadow: 'bg-pink-400/10' },
@@ -48,9 +51,11 @@ const Header: React.FC<HeaderProps> = ({
     </div>
   );
 
+  const isDark = themeMode !== 'light';
+
   return (
     <header className="fixed top-4 left-4 right-4 z-[100]">
-      <nav className={`max-w-6xl mx-auto flex items-center justify-between px-4 py-2.5 rounded-[2rem] border transition-all duration-500 hover:shadow-[0_20px_40px_rgba(139,92,246,0.15)] hover:scale-[1.005] hover:border-purple-200 ${isMagicMode ? 'bg-indigo-950/90 border-indigo-400/20 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.2)]' : 'bg-white/95 border-white backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.08)]'}`}>
+      <nav className={`max-w-6xl mx-auto flex items-center justify-between px-4 py-2.5 rounded-[2rem] border transition-all duration-500 hover:shadow-[0_20px_40px_rgba(139,92,246,0.15)] hover:scale-[1.005] hover:border-purple-200 ${isDark ? 'bg-indigo-950/90 border-indigo-400/20 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.2)]' : 'bg-white/95 border-white backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.08)]'}`}>
         <div onClick={() => scrollTo('hero')}>
           <Logo />
         </div>
@@ -65,7 +70,7 @@ const Header: React.FC<HeaderProps> = ({
               className={`px-3 xl:px-4 py-2.5 rounded-full text-xs xl:text-sm font-black uppercase tracking-wider transition-all duration-300 ${
                 activeSection === item.id 
                 ? 'bg-purple-600 text-white shadow-lg' 
-                : isMagicMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-purple-600'
+                : isDark ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-purple-600'
               }`}
             >
               {item.name}
@@ -77,20 +82,49 @@ const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-2 md:gap-3">
           <button 
             onClick={() => { setIsMuted(!isMuted); playPop(); }}
-            className={`p-2.5 md:p-3 rounded-full transition-all ${isMagicMode ? 'bg-white/10 text-white' : 'bg-gray-100 text-gray-500'}`}
+            className={`p-2.5 md:p-3 rounded-full transition-all ${isDark ? 'bg-white/10 text-white' : 'bg-gray-100 text-gray-500'}`}
           >
             {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
           </button>
           
-          <button 
-            onClick={() => { setIsMagicMode(!isMagicMode); playPop(); }}
-            className={`p-2.5 md:p-3 rounded-full transition-all flex items-center gap-2 ${isMagicMode ? 'bg-yellow-400 text-indigo-950 shadow-lg' : 'bg-indigo-950 text-white shadow-md'}`}
-          >
-            {isMagicMode ? <Sun size={18} className="animate-spin-slow" /> : <Moon size={18} />}
-          </button>
+          {/* Theme Dropdown */}
+          <div className="relative">
+            <button 
+              onClick={() => { setShowThemeMenu(!showThemeMenu); playPop(); }}
+              className={`p-2.5 md:p-3 rounded-full transition-all flex items-center gap-2 ${themeMode === 'light' ? 'bg-indigo-950 text-white shadow-md' : 'bg-yellow-400 text-indigo-950 shadow-lg'}`}
+            >
+              {themeMode === 'light' && <Moon size={18} />}
+              {themeMode === 'magic' && <Sun size={18} className="animate-spin-slow" />}
+              {themeMode === 'concert' && <Monitor size={18} />}
+              <ChevronDown size={14} />
+            </button>
+
+            {showThemeMenu && (
+               <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex flex-col p-1 animate-fade-in origin-top-right">
+                  <button 
+                    onClick={() => { setThemeMode('light'); setShowThemeMenu(false); }}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 font-bold text-sm ${themeMode === 'light' ? 'bg-gray-100 text-purple-600' : 'text-gray-600'}`}
+                  >
+                     <Sun size={16} /> Mod Zi (Light)
+                  </button>
+                  <button 
+                    onClick={() => { setThemeMode('magic'); setShowThemeMenu(false); }}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 font-bold text-sm ${themeMode === 'magic' ? 'bg-gray-100 text-purple-600' : 'text-gray-600'}`}
+                  >
+                     <Moon size={16} /> Mod Magie (Dark)
+                  </button>
+                  <button 
+                    onClick={() => { setThemeMode('concert'); setShowThemeMenu(false); }}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 font-bold text-sm ${themeMode === 'concert' ? 'bg-gray-100 text-purple-600' : 'text-gray-600'}`}
+                  >
+                     <Monitor size={16} /> Mod Concert 🔦
+                  </button>
+               </div>
+            )}
+          </div>
 
           <button 
-            className={`lg:hidden p-2.5 rounded-xl transition-all ${isOpen ? 'bg-pink-500 text-white' : isMagicMode ? 'bg-white/10 text-white' : 'bg-purple-50 text-purple-600'}`}
+            className={`lg:hidden p-2.5 rounded-xl transition-all ${isOpen ? 'bg-pink-500 text-white' : isDark ? 'bg-white/10 text-white' : 'bg-purple-50 text-purple-600'}`}
             onClick={() => setIsOpen(!isOpen)}
           >
             {isOpen ? <X size={24} /> : <Menu size={24} />}
@@ -100,7 +134,7 @@ const Header: React.FC<HeaderProps> = ({
 
       {/* High-End Mobile Menu */}
       {isOpen && (
-        <div className={`fixed inset-0 z-[110] lg:hidden flex flex-col ${isMagicMode ? 'bg-[#060111]' : 'bg-[#fffdfd]'}`}>
+        <div className={`fixed inset-0 z-[110] lg:hidden flex flex-col ${isDark ? 'bg-[#060111]' : 'bg-[#fffdfd]'}`}>
            {/* Dynamic Background */}
            <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-30">
               <div className="absolute top-[10%] left-[-10%] w-[120%] h-[40%] bg-purple-500/10 rounded-full blur-[100px] animate-pulse"></div>
@@ -111,7 +145,7 @@ const Header: React.FC<HeaderProps> = ({
            <div className="flex items-center justify-between p-6 relative z-10">
               <Logo large={true} />
               <button 
-                className={`p-4 rounded-2xl shadow-xl transition-all active:scale-75 ${isMagicMode ? 'bg-white/10 text-white' : 'bg-white text-gray-900 border border-purple-50'}`}
+                className={`p-4 rounded-2xl shadow-xl transition-all active:scale-75 ${isDark ? 'bg-white/10 text-white' : 'bg-white text-gray-900 border border-purple-50'}`}
                 onClick={() => setIsOpen(false)}
               >
                 <X size={28} />
@@ -120,7 +154,6 @@ const Header: React.FC<HeaderProps> = ({
 
            {/* Menu Grid */}
            <div className="flex-grow flex items-center justify-center px-6 relative z-10 overflow-y-auto">
-              {/* Reduced gaps and padding for compactness */}
               <div className="grid grid-cols-2 gap-x-4 gap-y-8 w-full max-w-sm py-4">
                 {menuItems.map((item, idx) => {
                   const firstLetter = item.name.charAt(0);
@@ -134,19 +167,17 @@ const Header: React.FC<HeaderProps> = ({
                       className="relative flex flex-col items-center justify-center group touch-manipulation hover-rubber"
                     >
                       <div className="flex items-center justify-center relative z-10">
-                        {/* Font size reduced: text-6xl -> text-4xl/5xl */}
-                        <span className={`text-4xl md:text-5xl font-[900] leading-none ${item.color} ${isMagicMode ? 'text-glow' : 'drop-shadow-sm'}`}>
+                        <span className={`text-5xl md:text-6xl font-[900] leading-none ${item.color} ${isDark ? 'text-glow' : 'drop-shadow-sm'}`}>
                           {firstLetter}
                         </span>
                         
-                        {/* Font size reduced: text-2xl -> text-lg */}
-                        <span className={`text-lg md:text-xl font-[900] ml-0.5 tracking-tight ${isActive ? 'text-purple-600' : isMagicMode ? 'text-white' : 'text-gray-800'}`}>
+                        <span className={`text-xl md:text-2xl font-[900] ml-1 tracking-tight ${isActive ? 'text-purple-600' : isDark ? 'text-white' : 'text-gray-800'}`}>
                           {restOfName}
                         </span>
                         
                         {isActive && (
                           <div className="absolute -top-3 -right-2 text-yellow-400 animate-bounce">
-                            <Sparkles size={14} />
+                            <Sparkles size={16} />
                           </div>
                         )}
                       </div>
@@ -161,14 +192,11 @@ const Header: React.FC<HeaderProps> = ({
            {/* Footer Buttons - Single Row Layout */}
            <div className="p-6 relative z-10 mt-auto pb-8">
               <div className="flex items-center gap-3">
-                 {/* WhatsApp Button */}
                  <a href="https://wa.me/40712345678" className="flex-1 py-3 bg-[#25D366] text-white rounded-2xl shadow-lg shadow-green-200 font-black text-sm md:text-base active:scale-[0.98] transition-all flex items-center justify-center gap-2">
                     <MessageCircle size={20} fill="white" />
                     <span>WhatsApp</span>
                  </a>
-                 
-                 {/* Call Button */}
-                 <a href="tel:0712345678" className={`flex-1 py-3 rounded-2xl font-black text-sm md:text-base active:scale-[0.98] transition-all flex items-center justify-center gap-2 border-2 ${isMagicMode ? 'bg-white/10 text-white border-white/20' : 'bg-white text-gray-800 border-gray-100 shadow-md'}`}>
+                 <a href="tel:0712345678" className={`flex-1 py-3 rounded-2xl font-black text-sm md:text-base active:scale-[0.98] transition-all flex items-center justify-center gap-2 border-2 ${isDark ? 'bg-white/10 text-white border-white/20' : 'bg-white text-gray-800 border-gray-100 shadow-md'}`}>
                     <Phone size={20} className="text-blue-500" />
                     <span>Sună-ne</span>
                  </a>

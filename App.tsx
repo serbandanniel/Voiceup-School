@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import About from './components/About';
@@ -15,15 +15,22 @@ import CourseDetail from './components/CourseDetail';
 import FloatingElements from './components/FloatingElements';
 import FullPhotoGallery from './components/FullPhotoGallery';
 import FullVideoGallery from './components/FullVideoGallery';
+import CustomCursor from './components/CustomCursor';
+
+type ThemeMode = 'light' | 'magic' | 'concert';
 
 const App: React.FC = () => {
   const [activeSection, setActiveSection] = useState('hero');
-  const [isMagicMode, setIsMagicMode] = useState(false);
+  const [themeMode, setThemeMode] = useState<ThemeMode>('light');
   const [isMuted, setIsMuted] = useState(false);
-  const [currentView, setCurrentView] = useState('home'); // 'home', 'canto', 'piano', 'painting', 'gallery-photo', 'gallery-video'
+  const [currentView, setCurrentView] = useState('home');
   const [savedScrollPosition, setSavedScrollPosition] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // Audio Feedback Logic
+  // Spotlight Ref
+  const spotlightRef = useRef<HTMLDivElement>(null);
+
+  // Audio Feedback
   const playPop = useCallback(() => {
     if (isMuted) return;
     try {
@@ -42,38 +49,43 @@ const App: React.FC = () => {
     } catch (e) {}
   }, [isMuted]);
 
+  // Handle Theme Classes
   useEffect(() => {
-    if (isMagicMode) {
-      document.body.classList.add('magic-mode');
-    } else {
-      document.body.classList.remove('magic-mode');
-    }
-  }, [isMagicMode]);
+    document.body.classList.remove('magic-mode', 'concert-mode');
+    if (themeMode === 'magic') document.body.classList.add('magic-mode');
+    if (themeMode === 'concert') document.body.classList.add('concert-mode');
+  }, [themeMode]);
 
-  // Restore scroll position when returning to home
+  // Handle Spotlight Move
   useEffect(() => {
-    if (currentView === 'home' && savedScrollPosition > 0) {
-      // Small timeout to ensure DOM is rendered before scrolling
-      const timer = setTimeout(() => {
-        window.scrollTo({
-          top: savedScrollPosition,
-          behavior: 'auto' // Instant jump allows for better UX in restoration
-        });
+    if (themeMode !== 'concert') return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      document.documentElement.style.setProperty('--spotlight-x', `${e.clientX}px`);
+      document.documentElement.style.setProperty('--spotlight-y', `${e.clientY}px`);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [themeMode]);
+
+  // Restore Scroll
+  useEffect(() => {
+    if (currentView === 'home' && savedScrollPosition > 0 && !isTransitioning) {
+      setTimeout(() => {
+        window.scrollTo({ top: savedScrollPosition, behavior: 'auto' });
       }, 50);
-      return () => clearTimeout(timer);
     } else if (currentView !== 'home') {
-      // When entering a detail view, we usually want to start at the top
       window.scrollTo(0, 0);
     }
-  }, [currentView, savedScrollPosition]);
+  }, [currentView, savedScrollPosition, isTransitioning]);
 
+  // Scroll Spy
   useEffect(() => {
     if (currentView !== 'home') return;
-
     const handleScroll = () => {
       const sections = ['hero', 'about', 'courses', 'teachers', 'gallery', 'reviews', 'pricing', 'enroll', 'contact'];
       const scrollPosition = window.scrollY + 200;
-
       for (const section of sections) {
         const element = document.getElementById(section);
         if (element && scrollPosition >= element.offsetTop && scrollPosition < element.offsetTop + element.offsetHeight) {
@@ -81,8 +93,6 @@ const App: React.FC = () => {
           break;
         }
       }
-
-      // Scroll Reveal logic
       const reveals = document.querySelectorAll('.reveal-on-scroll');
       reveals.forEach(el => {
         const windowHeight = window.innerHeight;
@@ -93,43 +103,50 @@ const App: React.FC = () => {
         }
       });
     };
-
     window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Initial check
+    handleScroll(); 
     return () => window.removeEventListener('scroll', handleScroll);
   }, [currentView]);
 
-  // Navigation Handlers
+  // Page Transition Handler
   const handleNavigateToView = (view: string) => {
+    setIsTransitioning(true);
     setSavedScrollPosition(window.scrollY);
-    setCurrentView(view);
+    
+    setTimeout(() => {
+      setCurrentView(view);
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 600); // Wait for curtain to go up
+    }, 500); // Wait for curtain to cover
   };
 
   const handleBackToHome = () => {
-    setCurrentView('home');
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentView('home');
+      setTimeout(() => setIsTransitioning(false), 600);
+    }, 500);
   };
 
   const handleEnrollFromDetail = () => {
-    setSavedScrollPosition(0); // Reset saved position so we don't jump to it
-    setCurrentView('home');
+    setSavedScrollPosition(0); 
+    setIsTransitioning(true);
     setTimeout(() => {
-      document.getElementById('enroll')?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+        setCurrentView('home');
+        setTimeout(() => {
+            setIsTransitioning(false);
+            document.getElementById('enroll')?.scrollIntoView({ behavior: 'smooth' });
+        }, 600);
+    }, 500);
   };
 
-  // Render content based on currentView
   const renderContent = () => {
     switch (currentView) {
       case 'canto':
       case 'piano':
       case 'painting':
-        return (
-          <CourseDetail 
-            courseId={currentView} 
-            onBack={handleBackToHome} 
-            onEnroll={handleEnrollFromDetail} 
-          />
-        );
+        return <CourseDetail courseId={currentView} onBack={handleBackToHome} onEnroll={handleEnrollFromDetail} />;
       case 'gallery-photo':
         return <FullPhotoGallery onBack={handleBackToHome} />;
       case 'gallery-video':
@@ -138,57 +155,23 @@ const App: React.FC = () => {
       default:
         return (
           <>
-            <section id="hero">
-              <Hero playPop={playPop} />
-            </section>
-
+            <section id="hero"><Hero playPop={playPop} /></section>
             <SectionSeparator type="piano" />
-            
-            <section id="about" className="py-2 reveal-on-scroll opacity-0">
-              <About />
-            </section>
-
+            <section id="about" className="py-2 reveal-on-scroll opacity-0"><About /></section>
             <SectionSeparator type="paint" />
-
-            <section id="courses" className="py-2 reveal-on-scroll opacity-0">
-              <Courses playPop={playPop} onViewDetails={handleNavigateToView} />
-            </section>
-
+            <section id="courses" className="py-2 reveal-on-scroll opacity-0"><Courses playPop={playPop} onViewDetails={handleNavigateToView} /></section>
             <SectionSeparator type="notes" />
-
-            <section id="teachers" className="py-2 reveal-on-scroll opacity-0">
-              <Teachers />
-            </section>
-
+            <section id="teachers" className="py-2 reveal-on-scroll opacity-0"><Teachers /></section>
             <SectionSeparator type="paint" />
-
-            <section id="gallery" className="py-2 reveal-on-scroll opacity-0">
-              <Gallery onViewAll={(type) => handleNavigateToView(type === 'photo' ? 'gallery-photo' : 'gallery-video')} />
-            </section>
-
+            <section id="gallery" className="py-2 reveal-on-scroll opacity-0"><Gallery onViewAll={(type) => handleNavigateToView(type === 'photo' ? 'gallery-photo' : 'gallery-video')} /></section>
             <SectionSeparator type="notes" />
-
-            <section id="reviews" className="py-2 reveal-on-scroll opacity-0">
-              <Reviews />
-            </section>
-
+            <section id="reviews" className="py-2 reveal-on-scroll opacity-0"><Reviews /></section>
             <SectionSeparator type="piano" />
-
-            <section id="pricing" className="py-2 reveal-on-scroll opacity-0">
-              <Pricing playPop={playPop} />
-            </section>
-
+            <section id="pricing" className="py-2 reveal-on-scroll opacity-0"><Pricing playPop={playPop} /></section>
             <SectionSeparator type="paint" />
-
-            <section id="enroll" className="py-2 reveal-on-scroll opacity-0">
-              <EnrollmentForm />
-            </section>
-
+            <section id="enroll" className="py-2 reveal-on-scroll opacity-0"><EnrollmentForm /></section>
             <SectionSeparator type="notes" />
-
-            <section id="contact" className="py-2 reveal-on-scroll opacity-0">
-              <Contact />
-            </section>
+            <section id="contact" className="py-2 reveal-on-scroll opacity-0"><Contact /></section>
           </>
         );
     }
@@ -196,15 +179,22 @@ const App: React.FC = () => {
 
   return (
     <div className={`relative min-h-screen selection:bg-purple-500 selection:text-white bg-mesh transition-colors duration-700`}>
-      {/* GLOBAL FLOATING ELEMENTS - Fixed position to appear everywhere */}
+      <CustomCursor />
+      
+      {/* Page Transition Curtain */}
+      <div className={`page-transition-curtain ${isTransitioning ? 'active' : ''}`}></div>
+
+      {/* Concert Spotlight Overlay */}
+      {themeMode === 'concert' && <div className="concert-overlay"></div>}
+
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <FloatingElements />
       </div>
 
       <Header 
         activeSection={activeSection} 
-        isMagicMode={isMagicMode} 
-        setIsMagicMode={setIsMagicMode}
+        themeMode={themeMode}
+        setThemeMode={setThemeMode}
         isMuted={isMuted}
         setIsMuted={setIsMuted}
         playPop={playPop}
@@ -214,7 +204,6 @@ const App: React.FC = () => {
         {renderContent()}
       </main>
 
-      {/* Only show Footer on Home or dedicated pages, but usually good everywhere */}
       <Footer />
     </div>
   );
